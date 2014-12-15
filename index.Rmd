@@ -1,0 +1,344 @@
+---
+title: 'Lesson 7: Advanced Raster Analysis'
+author: "Ben Devries, Jan Verbesselt, Loïc Dutrieux"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: united
+    toc: yes
+    toc_depth: 4
+    number_sections: true
+  pdf_document:
+    toc: yes
+---
+
+# Today's items
+
+## ToDo in the morning
+
+Go through the whole lesson and try to answer the questions below. We will address the questions in the lesson and discuss.
+
+## Objective of today
+
+Advanced Raster Analysis!
+
+## Learning outcomes of today:
+
+- carry out a supervised classification (random forest) on a series of raster layers
+- construct a raster sieve using the `clump()` function
+- work with thematic rasters
+
+# Advanced Raster Analysis
+
+## Classifying raster data
+
+One of the most important tasks in analysis of remote sensing image analysis is image classification. In classifying the image, we take the information contained in the various bands (possibly including other synthetic bands such as NDVI or principle components). In this tutorial we will explore two approaches for image classification: 
+  - supervised (random forest) classification
+  - unsupervised (k-means).
+
+### Supervised classification: Random Forest
+
+The Random Forest classification algorithm is an ensemble learning method that is used for both classification and regression. In our case, we will use the method for classification purposes. Here, the random forest method takes random subsets from a training dataset and constructs classification trees using each of these subsets. Trees consist of *branches* and *leaves*. 
+
+Branches represent nodes of the decision trees, which are often thresholds defined for the measured (known) variables in the dataset. Leaves are the class labels assigned at the termini of the trees. Sampling many subsets at random will result in many trees being built. Classes are then assigned based on classes assigned by all of these trees based on a majority rule, as if each class assigned by a decision tree were considered to be a *vote*. 
+
+Figure [1](fig:random) gives a simple demonstration of how the random forest method works in principle. For a more complete description of the Random Forests classification method, see [here](http://stat-www.berkeley.edu/users/breiman/RandomForests/cc\textunderscore home.htm). For a ``friendlier" introduction, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
+
+
+```{r random, echo=FALSE, fig.width=5, fig.align='center', fig.cap='Fig 1. Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.'}
+library(png)
+library(grid)
+img <- readPNG("figs//randomForestDescription.png")
+grid.raster(img)
+```
+
+<!---
+
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=0.6\textwidth]{figs/randomForestDescription.png}
+\caption{Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.}
+\label{RandomForestDemo}
+\end{figure}
+
+One major advantage of the Random Forest method is the fact that an 'Out of the Bag' (OOB) error estimate and an estimate of variable performance are performed. For each classification tree assembled, a fraction of the training data are left out and used to compute the error for each tree by predicting the class associated with that value and comparing with the already known class. This process results in a confusion matrix, which we will explore in our analysis. In addition an importance score is computed for each variable in two forms: the mean decrease in accuracy for each variable, and the Gini impurity criterion, which will also be explored in our analysis.
+
+We should first prepare the data on which the classification will be done. So far, we have prepared three bands from a ETM+ image in 2001 (bands 2, 3 and 4) as a rasterBrick, and have also calculated NDVI. In addition, there is a Vegetation Continuous Field (VCF) product available for the same period (2000)\footnote{For more information on the Landsat VCF product, see \url{http://glcf.umd.edu/data/landsatTreecover/}.}. This product is also based on Landsat ETM+ data, and represents an estimate of tree cover (in \%). Since this layer could also be useful in classifying land cover types, we will also include it as a potential covariate in the random forest classification.
+
+<<vcfGewata, fig=FALSE>>=
+# load the data and check it out
+data(vcfGewata)
+vcfGewata
+plot(vcfGewata)
+summary(vcfGewata)
+hist(vcfGewata)
+@
+
+Note that in the vcfGewata rasterLayer there are some values much greater than 100, which are flags for water, cloud or cloud shadow pixels. To avoid these layers, we can assign a value of NA to these pixels so they are not used in the classification.
+
+<<vcfGewata2, fig=FALSE>>=
+vcfGewata[vcfGewata > 100] <- NA
+# look at revised summary stats
+summary(vcfGewata)
+plot(vcfGewata)
+hist(vcfGewata)
+@
+
+To perform the classification in R, it is best to assemble all covariate layers (ie. those layers contaning predictor variable values) into one rasterBrick object. In this case, we can simply append these new layers (NDVI and VCF) to our existing rasterBrick (currently consisting of bands 2, 3, and 4). But first, let's rescale the NDVI layer by 10000 (just as the reflectance bands 2, 3, and 4 have been scaled) and store it as an integer raster. In Lesson 5 we encountered different data types for rasters, so we will not go into more detail here.
+
+<<covariants, fig=FALSE>>=
+# multiply all values by 10000
+ndvi <- calc(ndvi, fun = function(x) floor(x*10000))
+# change the data type
+# see ?dataType for more info
+dataType(ndvi) <- "INT2U"
+# name this layer to make plots interpretable
+names(ndvi) <- "NDVI"
+# make the covariate rasterBrick
+covs <- addLayer(gewata, ndvi, vcfGewata)
+plot(covs)
+@
+
+For this exercise, we will do a very simple classification for 2001 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2001.
+
+<<trainingPoly, fig=FALSE, results=hide>>=
+# load the training polygons
+data(trainingPoly)
+# superimpose training polygons onto ndvi plot
+plot(ndvi)
+plot(trainingPoly, add = TRUE)
+@
+
+The training classes are labelled as string labels. For this exercise, we will need to work with integer classes, so we will need to first 'relabel' our training classes. There are several approaches that could be used to convert these classes to integer codes. In this case, we will first make a function that will reclassify the character strings representing land cover classes into integers based on the existing factor levels.
+
+<<reclassify>>=
+# inspect the data slot of the trainingPoly object
+trainingPoly@data
+# the 'Class' column is actually an ordered factor type
+trainingPoly@data$Class
+str(trainingPoly@data$Class)
+
+# define a reclassification function which substitutes
+# the character label for the factor level (between 1 and 3)
+reclass <- function(x){
+  which(x==levels(trainingPoly@data$Class))
+}
+
+# use sapply() to apply this function over each element of the 'Class' column
+# and assign to a new column called 'Code'
+trainingPoly@data$Code <- sapply(trainingPoly@data$Class, FUN=reclass)
+@
+
+To train the raster data, we need to convert our training data to the same type using the \code{rasterize()} function. This function takes a spatial object (in this case a polygon object) and transfers the values to raster cells defined by a raster object. Here, we will define a new raster containing those values.
+
+<<training_plot, fig=FALSE, results=hide>>=
+# assign 'Code' values to raster cells (where they overlap)
+classes <- rasterize(trainingPoly, ndvi, field='Code')
+# set the dataType of the raster to INT1U
+# see ?dataType for more information
+dataType(classes) <- "INT1U"
+# define a colour scale for the classes
+# corresponding to: cropland, forest, wetland
+cols <- c("orange", "dark green", "light blue")
+# plot without a legend
+plot(classes, col=cols, legend=FALSE)
+# add a customized legend
+legend("topright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
+@
+
+(Note: there is a handy ``\code{progress="text"}" argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the \code{rasterize()} command above).
+
+Our goal in preprocessing these data is to have a table of values representing all layers (covariates) with \emph{known} values/classes. To do this, we will first need to create a version of our rasterBrick only representing the training pixels. Here the \code{mask()} function from the raster package will be very useful.
+
+<<masked_covariates, fig=FALSE>>=
+covmasked <- mask(covs, classes)
+plot(covmasked)
+# add the classes layer to this new brick
+names(classes) <- "class"
+trainingbrick <- addLayer(covmasked, classes)
+plot(trainingbrick)
+# Note that in this plot, the 'class' legend is not meaningful
+# This plot is useful simply to check the available layers
+@
+
+Now it's time to add all of these values to a data.frame representing all training data. This data.frame will be used as an input into the RandomForest classification function. We will use \code{getValues()} to extract all of the values from the layers of the rasterBrick.
+
+<<valuetable, results=hide>>=
+# extract all values into a matrix
+valuetable <- getValues(trainingbrick)
+# convert to a data.frame and inspect the first and last rows
+valuetable <- as.data.frame(valuetable)
+head(valuetable)
+tail(valuetable)
+@
+
+In inspecting this training data.frame, you will notice that a significant number of rows has the value NA for the class column, which will be problematic during the training phase. The rows with class=NA represent pixels found outside the training polygons, and these rows should therefore be removed before going ahead with deriving the Random Forest model.
+
+<<valuetable2, results=hide>>=
+# keep only rows where valuetable$classes has a value
+valuetable <- valuetable[!is.na(valuetable$class),]
+head(valuetable)
+tail(valuetable)
+
+# convert values in the class column to factors
+valuetable$class <- factor(valuetable$class, levels = c(1:3))
+@
+
+Now we have a convenient reference table which contains, for each of the three defined classes, all known values for all covariates. Before proceeding with the classification, let's visualize the distribution of some of these covariates using \code{ggplot()}. (Note: to make the following plots more readable, we will add a column with the class labels as characters. But we will not use this column when performing the classification.)
+
+<<prep_ggplots, fig=FALSE>>=
+# add a label column to valuetable
+valuetable$label <- with(valuetable, ifelse(class==1, "cropland", 
+                                            ifelse(class==2, "forest", "wetland")))
+# see ?ifelse() for more information
+@
+<<NDVIVCFB3B4_ggplots, fig=FALSE, eval=FALSE>>=
+# Now make the ggplots using valuetable$label to split the data into facets
+
+# 1. NDVI
+p1 <- ggplot(data=valuetable, aes(x=NDVI)) + 
+  geom_histogram(binwidth=300) + 
+  facet_wrap(~ label) +
+  theme_bw()
+p1
+
+# 2. VCF
+p2 <- ggplot(data=valuetable, aes(x=vcf2000Gewata)) +
+  geom_histogram(binwidth=5) +
+  labs(x="% Tree Cover") +
+  facet_wrap(~ label) +
+  theme_bw()
+p2
+# 4. Bands 3 and 4
+p3 <- ggplot(data=valuetable, aes(x=gewataB3, y=gewataB4)) +
+  stat_bin2d() +
+  facet_wrap(~ label) +
+  theme_bw()
+p3
+
+@
+<<B2B3_ggplots, fig=TRUE, include=FALSE>>=
+# 4. Bands 2 and 3
+p4 <- ggplot(data = valuetable, aes(x=gewataB2, y=gewataB3)) +
+  stat_bin2d() +
+  facet_wrap(~ label) +
+  theme_bw()
+p4
+
+@
+
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=\textwidth]{Lesson_6-B2B3_ggplots}
+\caption{Band2-Band3 scatterplots for the three training classes.}
+\label{B2B3_scatterplots}
+\end{figure}
+
+We can see from these distributions (e.g. Figure \ref{B2B3_scatterplots}) that these covariates may do well in classifying forest pixels, but we may expect some confusion between cropland and wetland (although the individual bands may help to separate these classes). When performing this classification on large datasets and with a large amount of training data, now may be a good time to save this table using the \code{write.csv()} command, in case something goes wrong after this point and you need to start over again.
+
+Now it is time to build the Random Forest model using the training data contained in the table of values we just made. For this, we will use the "randomForest" package in R, which is an excellent resource for building such types of models. Using the \code{randomForest()} function, we will build a model based on a matrix of predictors or covariates (ie. the first 5 columns of valuetable) related to the response (the 'class' column of valuetable).
+
+<<clean_valuetable>>=
+# NA values are not permitted in the covariates/predictor columns
+# keep only the rows with containing no NA's
+valuetable <- na.omit(valuetable)
+@
+<<randomforest, eval=FALSE>>=
+# construct a random forest model
+# covariates (x) are found in columns 1 to 5 of valuetable
+# training classes (y) are found in the 'class' column of valuetable
+# caution: this step takes fairly long!
+# but can be shortened by setting importance=FALSE
+library(randomForest)
+modelRF <- randomForest(x=valuetable[,c(1:5)], y=valuetable$class,
+                        importance = TRUE)
+@
+<<RF_background, echo=FALSE, results=hide>>=
+library(randomForest)
+if(!file.exists("data/modelRF.rda")){
+  modelRF <- randomForest(x = valuetable[,c(1:5)], y = valuetable$class,
+                        importance = TRUE)
+  save(modelRF, file='data/modelRF.rda', compress="bzip2", ascii=FALSE)
+} else {
+  load('data/modelRF.rda')
+}
+@
+
+Since the random forest method involves the building and testing of many classification trees (the 'forest'), it is a computationally expensive step (and could take alot of memory for especially large training datasets). When this step is finished, it would be a good idea to save the resulting object with the \code{save()} command. Any R object can be saved as an .rda file and reloaded into future sessions.
+
+The resulting object from the \code{randomForest()} function is a specialized object of class "randomForest", which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
+
+<<inspect_RFmodel, results=hide>>=
+# inspect the structure and element names of the resulting model
+modelRF
+class(modelRF)
+str(modelRF)
+names(modelRF)
+# inspect the confusion matrix of the OOB error assessment
+modelRF$confusion
+# to make the confusion matrix more readable
+colnames(modelRF$confusion) <- c("cropland", "forest", "wetland", "class.error")
+rownames(modelRF$confusion) <- c("cropland", "forest", "wetland")
+modelRF$confusion
+@
+
+Since we set 'importance=TRUE', we now also have information on the statistical importance of each of our covariates which we can visualize using the \code{varImpPlot()} command.
+
+<<varImpPlot, fig=TRUE, include=FALSE>>=
+varImpPlot(modelRF)
+@
+
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=0.6\textwidth]{Lesson_6-varImpPlot}
+\caption{Variable importance plots for a Random Forest model showing the mean decrease in accuracy (left) and the decrease in Gini Impurity Coefficient (right) for each variable.}
+\label{varimp}
+\end{figure}
+
+These two plots give two different reports on variable importance (see \code{?importance()}). First, the mean decrease in accuracy indicates the amount by which the classification accuracy decreased based on the OOB assessment. Second, the Gini impurity coefficient gives a measure of class homogeneity. More specifically, the decrease in the Gini impurity coefficient when including a particular variable is shown in the plot \footnote{From Wikipedia: "Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it were randomly labeled according to the distribution of labels in the subset". See \url{http://en.wikipedia.org/wiki/Decision_tree_learning}}.
+
+In this case, it seems that Gewata bands 3 and 4 have the highest impact on accuracy, while bands 3 and 2 score highest with the Gini impurity criterion (Figure \ref{varimp}). For especially large datasets, it may be helpful to know this information, and leave out less important variables for subsequent runs of the \code{randomForest()} function.
+
+Since the VCF layer included NA's (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate random forest model as above, but excluding this layer. What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What affect does leaving this variable out have on the processing time (hint: use \code{system.time()})?
+
+Now we can apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here 'covs') must correspond to the column names of the training table. We will use the \code{predict()} function from the raster package to predict class values based on the random forest model we have just constructed. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the \code{randomForest()} function we applied earlier.
+
+<<predictRaster, fig=TRUE, include=FALSE, results=hide>>=
+# check layer and column names
+names(covs)
+names(valuetable)
+# predict land cover using the RF model
+predLC <- predict(covs, model=modelRF, na.rm=TRUE)
+# plot the results
+# recall: 1 = cropland, 2 = forest, 3 = wetland
+cols <- c("orange", "dark green", "light blue")
+plot(predLC, col=cols, legend=FALSE)
+legend("bottomright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
+@
+\begin{figure}[!htp]
+\centering
+\includegraphics[width=0.6\textwidth]{Lesson_6-predictRaster}
+\caption{Resulting land cover map using a Random Forest classifier.}
+\label{RandomForestLC}
+\end{figure}
+
+Note that the \code{predict()} function also takes arguments that can be passed to \code{writeRaster()} (eg. \code{filename = "..."}, so it would be a good idea to write to file as you perform this step (rather than keeping all output in memory).
+
+-->
+
+# Today's summary
+
+We learned about:
+
+- test
+- test
+
+# Excercise of today
+
+## Optional for bonus points
+
+# More info
+
+About projections and code: https://www.nceas.ucsb.edu/scicomp/recipes/projections
+
+# References
