@@ -10,6 +10,11 @@ output:
     number_sections: true
 ---
 
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+opts_chunk$set(fig.width=5, fig.align='center', fig.height=5)
+```
+
 # Today's items
 
 ## ToDo in the morning
@@ -107,7 +112,7 @@ Branches represent nodes of the decision trees, which are often thresholds defin
 Figure [1](fig:random) gives a simple demonstration of how the random forest method works in principle. For a more complete description of the Random Forests classification method, see [here](http://stat-www.berkeley.edu/users/breiman/RandomForests/cc\textunderscore home.htm). For a ``friendlier" introduction, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
 
 
-```{r random, echo=FALSE, fig.width=5, fig.align='center', fig.cap='Fig 1. Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.'}
+```{r random, echo=FALSE, fig.cap='Fig 1. Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.'}
 library(png)
 library(grid)
 img <- readPNG("figs//randomForestDescription.png")
@@ -144,10 +149,10 @@ summary(vcfGewata)
 
 To perform the classification in R, it is best to assemble all covariate layers (ie. those layers contaning predictor variable values) into one rasterBrick object. In this case, we can simply append these new layers (NDVI and VCF) to our existing rasterBrick (currently consisting of bands 2, 3, and 4). But first, let's rescale the NDVI layer by 10000 (just as the reflectance bands 2, 3, and 4 have been scaled) and store it as an integer raster. In Lesson 5 we encountered different data types for rasters, so we will not go into more detail here.
 
-```{r, eval=TRUE, fig.align='center'}
+```{r, eval=TRUE, fig.align='center', fig.width=5}
 
 # multiply all values by 10000
-ndvi <- calc(ndvi, fun = function(x) floor(x*10000))
+ndvi <- calc(ndvi, fun = function(x) floor(x*10000)) ## Ben: explain why you do this?
 # change the data type
 # see ?dataType for more info
 dataType(ndvi) <- "INT2U"
@@ -158,45 +163,38 @@ covs <- addLayer(gewata, ndvi, vcfGewata)
 plot(covs)
 ```
 
-<!---
-
-<<covariants, fig=FALSE>>=
-
-@
-
 For this exercise, we will do a very simple classification for 2001 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2001.
 
-<<trainingPoly, fig=FALSE, results=hide>>=
+```{r, fig.align='center', fig.width=5}
 # load the training polygons
-data(trainingPoly)
+load("data/trainingPoly.rda")
 # superimpose training polygons onto ndvi plot
 plot(ndvi)
 plot(trainingPoly, add = TRUE)
-@
+```
 
 The training classes are labelled as string labels. For this exercise, we will need to work with integer classes, so we will need to first 'relabel' our training classes. There are several approaches that could be used to convert these classes to integer codes. In this case, we will first make a function that will reclassify the character strings representing land cover classes into integers based on the existing factor levels.
 
-<<reclassify>>=
+```{r reclassify}
 # inspect the data slot of the trainingPoly object
 trainingPoly@data
 # the 'Class' column is actually an ordered factor type
 trainingPoly@data$Class
 str(trainingPoly@data$Class)
-
 # define a reclassification function which substitutes
 # the character label for the factor level (between 1 and 3)
 reclass <- function(x){
   which(x==levels(trainingPoly@data$Class))
 }
-
 # use sapply() to apply this function over each element of the 'Class' column
 # and assign to a new column called 'Code'
 trainingPoly@data$Code <- sapply(trainingPoly@data$Class, FUN=reclass)
-@
+str(trainingPoly@data)
+```
 
 To train the raster data, we need to convert our training data to the same type using the \code{rasterize()} function. This function takes a spatial object (in this case a polygon object) and transfers the values to raster cells defined by a raster object. Here, we will define a new raster containing those values.
 
-<<training_plot, fig=FALSE, results=hide>>=
+```{r}
 # assign 'Code' values to raster cells (where they overlap)
 classes <- rasterize(trainingPoly, ndvi, field='Code')
 # set the dataType of the raster to INT1U
@@ -209,13 +207,13 @@ cols <- c("orange", "dark green", "light blue")
 plot(classes, col=cols, legend=FALSE)
 # add a customized legend
 legend("topright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
-@
+```
 
-(Note: there is a handy ``\code{progress="text"}" argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the \code{rasterize()} command above).
+Note: there is a handy `progress="text"` argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the`rasterize()` command above.
 
-Our goal in preprocessing these data is to have a table of values representing all layers (covariates) with \emph{known} values/classes. To do this, we will first need to create a version of our rasterBrick only representing the training pixels. Here the \code{mask()} function from the raster package will be very useful.
+Our goal in preprocessing these data is to have a table of values representing all layers (covariates) with *known* values/classes. To do this, we will first need to create a version of our rasterBrick only representing the training pixels. Here the `mask()` function from the raster package will be very useful.
 
-<<masked_covariates, fig=FALSE>>=
+```{r, include=FALSE}
 covmasked <- mask(covs, classes)
 plot(covmasked)
 # add the classes layer to this new brick
@@ -224,49 +222,55 @@ trainingbrick <- addLayer(covmasked, classes)
 plot(trainingbrick)
 # Note that in this plot, the 'class' legend is not meaningful
 # This plot is useful simply to check the available layers
-@
+```
 
-Now it's time to add all of these values to a data.frame representing all training data. This data.frame will be used as an input into the RandomForest classification function. We will use \code{getValues()} to extract all of the values from the layers of the rasterBrick.
+Now it's time to add all of these values to a data.frame representing all training data. 
+This data.frame will be used as an input into the RandomForest classification function. 
+We will use `getValues()` to extract all of the values from the layers of the rasterBrick.
 
-<<valuetable, results=hide>>=
+```{r, results='hide'}
 # extract all values into a matrix
 valuetable <- getValues(trainingbrick)
 # convert to a data.frame and inspect the first and last rows
 valuetable <- as.data.frame(valuetable)
 head(valuetable)
 tail(valuetable)
-@
+```
 
 In inspecting this training data.frame, you will notice that a significant number of rows has the value NA for the class column, which will be problematic during the training phase. The rows with class=NA represent pixels found outside the training polygons, and these rows should therefore be removed before going ahead with deriving the Random Forest model.
 
-<<valuetable2, results=hide>>=
+```{r, results='hide'}
 # keep only rows where valuetable$classes has a value
 valuetable <- valuetable[!is.na(valuetable$class),]
 head(valuetable)
 tail(valuetable)
-
 # convert values in the class column to factors
 valuetable$class <- factor(valuetable$class, levels = c(1:3))
-@
+```
 
-Now we have a convenient reference table which contains, for each of the three defined classes, all known values for all covariates. Before proceeding with the classification, let's visualize the distribution of some of these covariates using \code{ggplot()}. (Note: to make the following plots more readable, we will add a column with the class labels as characters. But we will not use this column when performing the classification.)
 
-<<prep_ggplots, fig=FALSE>>=
+Now we have a convenient reference table which contains, for each of the three defined classes, 
+all known values for all covariates.
+Before proceeding with the classification, let's visualize the distribution of some of these covariates using `ggplot()`. 
+
+(Note: to make the following plots more readable, we will add a column with the class labels as characters. But we will not use this column when performing the classification.)
+
+```{r, include=FALSE}
+library(ggplot2)
 # add a label column to valuetable
 valuetable$label <- with(valuetable, ifelse(class==1, "cropland", 
                                             ifelse(class==2, "forest", "wetland")))
 # see ?ifelse() for more information
-@
-<<NDVIVCFB3B4_ggplots, fig=FALSE, eval=FALSE>>=
 # Now make the ggplots using valuetable$label to split the data into facets
+```
 
+```{r, eval=FALSE}
 # 1. NDVI
 p1 <- ggplot(data=valuetable, aes(x=NDVI)) + 
   geom_histogram(binwidth=300) + 
   facet_wrap(~ label) +
   theme_bw()
 p1
-
 # 2. VCF
 p2 <- ggplot(data=valuetable, aes(x=vcf2000Gewata)) +
   geom_histogram(binwidth=5) +
@@ -274,41 +278,35 @@ p2 <- ggplot(data=valuetable, aes(x=vcf2000Gewata)) +
   facet_wrap(~ label) +
   theme_bw()
 p2
+
 # 4. Bands 3 and 4
 p3 <- ggplot(data=valuetable, aes(x=gewataB3, y=gewataB4)) +
   stat_bin2d() +
   facet_wrap(~ label) +
   theme_bw()
 p3
+```
 
-@
-<<B2B3_ggplots, fig=TRUE, include=FALSE>>=
+```{r, fig.width=12}
 # 4. Bands 2 and 3
 p4 <- ggplot(data = valuetable, aes(x=gewataB2, y=gewataB3)) +
   stat_bin2d() +
   facet_wrap(~ label) +
   theme_bw()
 p4
+```
 
-@
+We can see from these distributions that these covariates may do well in classifying forest pixels, but we may expect some confusion between cropland and wetland (although the individual bands may help to separate these classes). When performing this classification on large datasets and with a large amount of training data, now may be a good time to save this table using the `write.csv()` command, in case something goes wrong after this point and you need to start over again.
 
-\begin{figure}[!htp]
-\centering
-\includegraphics[width=\textwidth]{Lesson_6-B2B3_ggplots}
-\caption{Band2-Band3 scatterplots for the three training classes.}
-\label{B2B3_scatterplots}
-\end{figure}
+Now it is time to build the Random Forest model using the training data contained in the table of values we just made. For this, we will use the `randomForest` package in R, which is an excellent resource for building such types of models. Using the `randomForest()` function, we will build a model based on a matrix of predictors or covariates (ie. the first 5 columns of valuetable) related to the response (the `class` column of valuetable).
 
-We can see from these distributions (e.g. Figure \ref{B2B3_scatterplots}) that these covariates may do well in classifying forest pixels, but we may expect some confusion between cropland and wetland (although the individual bands may help to separate these classes). When performing this classification on large datasets and with a large amount of training data, now may be a good time to save this table using the \code{write.csv()} command, in case something goes wrong after this point and you need to start over again.
-
-Now it is time to build the Random Forest model using the training data contained in the table of values we just made. For this, we will use the "randomForest" package in R, which is an excellent resource for building such types of models. Using the \code{randomForest()} function, we will build a model based on a matrix of predictors or covariates (ie. the first 5 columns of valuetable) related to the response (the 'class' column of valuetable).
-
-<<clean_valuetable>>=
+```{r}
 # NA values are not permitted in the covariates/predictor columns
 # keep only the rows with containing no NA's
 valuetable <- na.omit(valuetable)
-@
-<<randomforest, eval=FALSE>>=
+```
+
+```{r, eval=FALSE}
 # construct a random forest model
 # covariates (x) are found in columns 1 to 5 of valuetable
 # training classes (y) are found in the 'class' column of valuetable
@@ -317,8 +315,9 @@ valuetable <- na.omit(valuetable)
 library(randomForest)
 modelRF <- randomForest(x=valuetable[,c(1:5)], y=valuetable$class,
                         importance = TRUE)
-@
-<<RF_background, echo=FALSE, results=hide>>=
+```
+
+```{r, echo=FALSE, results='hide'}
 library(randomForest)
 if(!file.exists("data/modelRF.rda")){
   modelRF <- randomForest(x = valuetable[,c(1:5)], y = valuetable$class,
@@ -327,11 +326,14 @@ if(!file.exists("data/modelRF.rda")){
 } else {
   load('data/modelRF.rda')
 }
-@
+```
 
-Since the random forest method involves the building and testing of many classification trees (the 'forest'), it is a computationally expensive step (and could take alot of memory for especially large training datasets). When this step is finished, it would be a good idea to save the resulting object with the \code{save()} command. Any R object can be saved as an .rda file and reloaded into future sessions.
+Since the random forest method involves the building and testing of many classification trees (the 'forest'), it is a computationally expensive step (and could take alot of memory for especially large training datasets). When this step is finished, it would be a good idea to save the resulting object with the `save()}` command. Any R object can be saved as an `.rda` file and reloaded into future sessions.
 
-The resulting object from the \code{randomForest()} function is a specialized object of class "randomForest", which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
+The resulting object from the `randomForest()` function is a specialized object of class "randomForest", which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
+
+
+<!---
 
 <<inspect_RFmodel, results=hide>>=
 # inspect the structure and element names of the resulting model
