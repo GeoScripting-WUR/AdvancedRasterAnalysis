@@ -8,8 +8,6 @@ output:
     toc: yes
     toc_depth: 4
     number_sections: true
-  pdf_document:
-    toc: yes
 ---
 
 # Today's items
@@ -29,6 +27,70 @@ Advanced Raster Analysis!
 - work with thematic rasters
 
 # Advanced Raster Analysis
+
+## Landsat data analysis
+
+Since being released to the public, the Landsat data archive has become an invaluable tool for environmental monitoring. With a historical archive reaching back to the 1970's, the release of these data has resulted in a spur of time series based methods. In this tutorial, we will work with time series data from the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor. Landsat scenes are delivered via the USGS as a number of image layers representing the different bands captured by the sensors. In the case of the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor, the bands are shown in Figure X. Using different combination of these bands can be useful in describing land features and change processes.
+
+`insert figure here`
+
+Part of a landsat scene, including bands 2-4 are included as part of the rasta package. These data have been processed using the LEDAPS framework (http://ledaps.nascom.nasa.gov/), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
+
+We will begin exploring these data simply by visualizing them.
+
+```{r, message=FALSE, include=FALSE}
+## load data
+load("data/GewataB2.rda")
+load("data/GewataB3.rda")
+load("data/GewataB4.rda")
+
+# check out the attributes
+GewataB2
+# some basic statistics using cellStats()
+cellStats(GewataB2, stat=max)
+cellStats(GewataB2, stat=mean)
+# This is equivalent to:
+maxValue(GewataB2)
+# what is the maximum value of all three bands?
+max(c(maxValue(GewataB2), maxValue(GewataB3), maxValue(GewataB4)))
+# summary() is useful function for a quick overview
+summary(GewataB2)
+
+# put the 3 bands into a rasterBrick object to summarize together
+gewata <- brick(GewataB2, GewataB3, GewataB4)
+# 3 histograms in one window (automatic, if a rasterBrick is supplied)
+hist(gewata)
+```
+
+
+When we plot the histogram of the rasterBrick, the scales of the axes and the bin sizes are not equivalent, which could be problematic. This can be solved by adjusting these paramters in `hist()`, which would take some extra work and consideration. Alternatively, the `rasterVis` package has enhanced plotting capabilities which make it easier to make more attractive plots with these considerations in mind.
+
+```{r}
+library(rasterVis)
+# view all histograms together with rasterVis
+histogram(gewata)
+```
+
+The `rasterVis` package has several other raster plotting types inherited from the lattice package. For multispectral data, one plot type which is particularly useful for data exploration is the scatterplot matrix, called by the `splom()` function.
+
+```{r}
+splom(gewata)
+```
+
+Calling `splom()` on a rasterBrick reveals potential correlations between the layers themselves. In the case of bands 2-4 of the gewata subset, we can see that band 2 and 3 (in the visual part of the EM spectrum) are highly correlated, while band 4 contains significant non-redundant information. 
+
+**Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?** ETM+ band 4 (nearly equivalent to band 5 in the Landsat 8 OLI sensor) is situated in the near infrared (NIR) region of the EM spectrum and is often used to described vegetation-related features.
+
+
+We observe a strong correlation between two of the Landsat bands of the gewata subset, but a very different distribution of values in band 4 (NIR). This distribution stems from the fact that vegetation reflects very highly in the NIR range, compared to the visual range of the EM spectrum. A commonly used metric for assessing vegetation dynamics, the normalized difference vegetation index (NDVI), explained in the previous lesson, takes advantage of this fact and is computed from Landsat bands 3 (visible red) and 4 (near infra-red).
+
+In the previous lesson, we explored several ways to calculate NDVI, using direct raster algebra, `calc()` or `overlay()`. Since we will be using NDVI again later in this tutorial, let's calculated it again and store it in our workspace using `overlay()`.
+
+```{r}
+ndvi <- overlay(GewataB4, GewataB3, fun=function(x,y){(x-y)/(x+y)})
+```
+
+Aside from the advantages of `calc()` and `overlay()` regarding memory usage, an additional advantage of these functions is the fact that the result can be written immediately to file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload in subsequent sessions without having to repeat your analysis.
 
 ## Classifying raster data
 
@@ -52,41 +114,38 @@ img <- readPNG("figs//randomForestDescription.png")
 grid.raster(img)
 ```
 
-<!---
+One major advantage of the Random Forest method is the fact that an *Out of the Bag* (OOB) error estimate and an estimate of variable performance are performed. For each classification tree assembled, a fraction of the training data are left out and used to compute the error for each tree by predicting the class associated with that value and comparing with the already known class. This process results in a confusion matrix, which we will explore in our analysis. In addition an importance score is computed for each variable in two forms: the mean decrease in accuracy for each variable, and the Gini impurity criterion, which will also be explored in our analysis.
 
-\begin{figure}[!htp]
-\centering
-\includegraphics[width=0.6\textwidth]{figs/randomForestDescription.png}
-\caption{Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.}
-\label{RandomForestDemo}
-\end{figure}
+We should first prepare the data on which the classification will be done. So far, we have prepared three bands from a ETM+ image in 2001 (bands 2, 3 and 4) as a rasterBrick, and have also calculated NDVI. In addition, there is a Vegetation Continuous Field (VCF) product available for the same period (2000).
 
-One major advantage of the Random Forest method is the fact that an 'Out of the Bag' (OOB) error estimate and an estimate of variable performance are performed. For each classification tree assembled, a fraction of the training data are left out and used to compute the error for each tree by predicting the class associated with that value and comparing with the already known class. This process results in a confusion matrix, which we will explore in our analysis. In addition an importance score is computed for each variable in two forms: the mean decrease in accuracy for each variable, and the Gini impurity criterion, which will also be explored in our analysis.
+For more information on the Landsat VCF product, see (http://glcf.umd.edu/data/landsatTreecover/). This product is also based on Landsat ETM+ data, and represents an estimate of tree cover (in %). Since this layer could also be useful in classifying land cover types, we will also include it as a potential covariate in the random forest classification.
 
-We should first prepare the data on which the classification will be done. So far, we have prepared three bands from a ETM+ image in 2001 (bands 2, 3 and 4) as a rasterBrick, and have also calculated NDVI. In addition, there is a Vegetation Continuous Field (VCF) product available for the same period (2000)\footnote{For more information on the Landsat VCF product, see \url{http://glcf.umd.edu/data/landsatTreecover/}.}. This product is also based on Landsat ETM+ data, and represents an estimate of tree cover (in \%). Since this layer could also be useful in classifying land cover types, we will also include it as a potential covariate in the random forest classification.
-
-<<vcfGewata, fig=FALSE>>=
+```{r, fig.align='center'}
 # load the data and check it out
-data(vcfGewata)
+# @ can we show a bit more about this data set - where does it come from
+# @ can we provide an option to download it themselve for any location?
+library(raster)
+load("data/vcfGewata.rda")
 vcfGewata
 plot(vcfGewata)
 summary(vcfGewata)
 hist(vcfGewata)
-@
+```
 
-Note that in the vcfGewata rasterLayer there are some values much greater than 100, which are flags for water, cloud or cloud shadow pixels. To avoid these layers, we can assign a value of NA to these pixels so they are not used in the classification.
+Note that in the `vcfGewata` rasterLayer there are some values much greater than 100, which are flags for water, cloud or cloud shadow pixels. To avoid these layers, we can assign a value of `NA` to these pixels so they are not used in the classification.
 
-<<vcfGewata2, fig=FALSE>>=
+```{r}
 vcfGewata[vcfGewata > 100] <- NA
 # look at revised summary stats
 summary(vcfGewata)
-plot(vcfGewata)
-hist(vcfGewata)
-@
+# plot(vcfGewata)
+# hist(vcfGewata)
+```
 
 To perform the classification in R, it is best to assemble all covariate layers (ie. those layers contaning predictor variable values) into one rasterBrick object. In this case, we can simply append these new layers (NDVI and VCF) to our existing rasterBrick (currently consisting of bands 2, 3, and 4). But first, let's rescale the NDVI layer by 10000 (just as the reflectance bands 2, 3, and 4 have been scaled) and store it as an integer raster. In Lesson 5 we encountered different data types for rasters, so we will not go into more detail here.
 
-<<covariants, fig=FALSE>>=
+```{r, eval=TRUE, fig.align='center'}
+
 # multiply all values by 10000
 ndvi <- calc(ndvi, fun = function(x) floor(x*10000))
 # change the data type
@@ -97,6 +156,12 @@ names(ndvi) <- "NDVI"
 # make the covariate rasterBrick
 covs <- addLayer(gewata, ndvi, vcfGewata)
 plot(covs)
+```
+
+<!---
+
+<<covariants, fig=FALSE>>=
+
 @
 
 For this exercise, we will do a very simple classification for 2001 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2001.
