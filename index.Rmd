@@ -12,34 +12,38 @@ output:
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
-opts_chunk$set(fig.width=5, fig.align='center', fig.height=5)
+opts_chunk$set(fig.width=5, fig.align='center', fig.height=5, dpi=72)
 ```
 
 # Today's items
 
 ## ToDo in the morning
 
-Go through the whole lesson and try to answer the questions below. We will address the questions in the lesson and discuss.
-
-## Objective of today
-
-Advanced Raster Analysis!
+Go through the whole lesson and try to answer the questions below. 
+We will address the questions in the lesson and discuss.
 
 ## Learning outcomes of today:
 
-- carry out a supervised classification (random forest) on a series of raster layers
+Being able to:
+- carry out a supervised and unsupervised classification on a series of raster layers
 - construct a raster sieve using the `clump()` function
-- work with thematic rasters
+- deal with thematic (catergorical maps)
 
 # Advanced Raster Analysis
 
-## Landsat data analysis
+## Introduction to Landsat data used here.
 
-Since being released to the public, the Landsat data archive has become an invaluable tool for environmental monitoring. With a historical archive reaching back to the 1970's, the release of these data has resulted in a spur of time series based methods. In this tutorial, we will work with time series data from the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor. Landsat scenes are delivered via the USGS as a number of image layers representing the different bands captured by the sensors. In the case of the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor, the bands are shown in Figure X. Using different combination of these bands can be useful in describing land features and change processes.
+Since being released to the public, the Landsat data archive has become an invaluable tool for environmental monitoring. With a historical archive reaching back to the 1970's, the release of these data has resulted in a spur of time series based methods. In this tutorial, we will work with time series data from the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor. Landsat scenes are delivered via the USGS as a number of image layers representing the different bands captured by the sensors. In the case of the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor, the bands are shown in the figure below. Using different combination of these bands can be useful in describing land features and change processes.
 
-`insert figure here`
+```{r, echo=FALSE, fig.cap='Landsat 7 ETM+ bands', fig.width=10}
+library(png)
+library(grid)
+img <- readPNG("figs//landsat_bands.png")
+grid.raster(img)
+```
 
-Part of a landsat scene, including bands 2-4 are included as part of the rasta package. These data have been processed using the LEDAPS framework (http://ledaps.nascom.nasa.gov/), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
+Part of a landsat scene, including bands 2-4 are included in the data provide here. 
+These data have been processed using the LEDAPS framework (http://ledaps.nascom.nasa.gov/), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
 
 We will begin exploring these data simply by visualizing them.
 
@@ -332,10 +336,7 @@ Since the random forest method involves the building and testing of many classif
 
 The resulting object from the `randomForest()` function is a specialized object of class "randomForest", which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
 
-
-<!---
-
-<<inspect_RFmodel, results=hide>>=
+```{r inspect_RFmodel, results='hide'}
 # inspect the structure and element names of the resulting model
 modelRF
 class(modelRF)
@@ -347,65 +348,384 @@ modelRF$confusion
 colnames(modelRF$confusion) <- c("cropland", "forest", "wetland", "class.error")
 rownames(modelRF$confusion) <- c("cropland", "forest", "wetland")
 modelRF$confusion
-@
+```
 
-Since we set 'importance=TRUE', we now also have information on the statistical importance of each of our covariates which we can visualize using the \code{varImpPlot()} command.
+Since we set `importance=TRUE`, we now also have information on the statistical importance of each of our covariates which we can visualize using the `varImpPlot()` command.
 
-<<varImpPlot, fig=TRUE, include=FALSE>>=
+```{r, fig.width=10}
 varImpPlot(modelRF)
-@
+```
+The figure above shows the variable importance plots for a Random Forest model showing the mean decrease in accuracy (left) and the decrease in Gini Impurity Coefficient (right) for each variable.
 
-\begin{figure}[!htp]
-\centering
-\includegraphics[width=0.6\textwidth]{Lesson_6-varImpPlot}
-\caption{Variable importance plots for a Random Forest model showing the mean decrease in accuracy (left) and the decrease in Gini Impurity Coefficient (right) for each variable.}
-\label{varimp}
-\end{figure}
+These two plots give two different reports on variable importance (see `?importance()`). 
 
-These two plots give two different reports on variable importance (see \code{?importance()}). First, the mean decrease in accuracy indicates the amount by which the classification accuracy decreased based on the OOB assessment. Second, the Gini impurity coefficient gives a measure of class homogeneity. More specifically, the decrease in the Gini impurity coefficient when including a particular variable is shown in the plot \footnote{From Wikipedia: "Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it were randomly labeled according to the distribution of labels in the subset". See \url{http://en.wikipedia.org/wiki/Decision_tree_learning}}.
+First, the mean decrease in accuracy indicates the amount by which the classification accuracy decreased based on the `OOB` assessment. 
+Second, the Gini impurity coefficient gives a measure of class homogeneity. More specifically, the decrease in the Gini impurity coefficient when including a particular variable is shown in the plot. From [Wikipedia](http://en.wikipedia.org/wiki/Decision_tree_learning): "Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it were randomly labeled according to the distribution of labels in the subset".
 
-In this case, it seems that Gewata bands 3 and 4 have the highest impact on accuracy, while bands 3 and 2 score highest with the Gini impurity criterion (Figure \ref{varimp}). For especially large datasets, it may be helpful to know this information, and leave out less important variables for subsequent runs of the \code{randomForest()} function.
+In this case, it seems that Gewata bands 3 and 4 have the highest impact on accuracy, while bands 3 and 2 score highest with the Gini impurity criterion. For especially large datasets, it may be helpful to know this information, and leave out less important variables for subsequent runs of the `randomForest()` function.
 
-Since the VCF layer included NA's (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate random forest model as above, but excluding this layer. What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What affect does leaving this variable out have on the processing time (hint: use \code{system.time()})?
+**Question**:
+Since the VCF layer included NA's (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate random forest model as above, but excluding this layer. What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What affect does leaving this variable out have on the processing time (hint: use `system.time()`)?
 
-Now we can apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here 'covs') must correspond to the column names of the training table. We will use the \code{predict()} function from the raster package to predict class values based on the random forest model we have just constructed. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the \code{randomForest()} function we applied earlier.
+Now we can apply this model to the rest of the image and assign classes to all pixels. 
+Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond to the column names of the training table. We will use the `predict()` function from the `raster` package to predict class values based on the random forest model we have just constructed. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `randomForest()` function we applied earlier.
 
-<<predictRaster, fig=TRUE, include=FALSE, results=hide>>=
+```{r predictraster, fig.width=7}
 # check layer and column names
 names(covs)
 names(valuetable)
 # predict land cover using the RF model
-predLC <- predict(covs, model=modelRF, na.rm=TRUE)
+if (!file.exists(fn <- "data/predLC.grd")) {
+  predLC <- predict(covs, model=modelRF, na.rm=TRUE, filename = fn)
+} else {
+  predLC <- raster(fn)
+}
+
 # plot the results
 # recall: 1 = cropland, 2 = forest, 3 = wetland
 cols <- c("orange", "dark green", "light blue")
 plot(predLC, col=cols, legend=FALSE)
-legend("bottomright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
-@
-\begin{figure}[!htp]
-\centering
-\includegraphics[width=0.6\textwidth]{Lesson_6-predictRaster}
-\caption{Resulting land cover map using a Random Forest classifier.}
-\label{RandomForestLC}
-\end{figure}
+legend("bottomright", 
+       legend=c("cropland", "forest", "wetland"), 
+       fill=cols, bg="white")
+```
 
-Note that the \code{predict()} function also takes arguments that can be passed to \code{writeRaster()} (eg. \code{filename = "..."}, so it would be a good idea to write to file as you perform this step (rather than keeping all output in memory).
+Note that the `predict()` function also takes arguments that can be passed to `writeRaster()` (eg. `filename = ""`, so it is a good idea to write to file as you perform this step (rather than keeping all output in memory).
 
--->
+### Unsupervised classification k-means
+
+In the absence of training data, an unsupervised classification can be carried out. Unsupervised classification methods assign classes based on inherent structures in the data without resorting to training of the algorithm. One such method, the k-means method, divides data into clusters based on Euclidean distances from cluster means in a feature space.
+
+[More information on the theory behind k-means clustering](http://home.deib.polimi.it/matteucc/Clustering/tutorial_html/kmeans.html\#macqueen).
+
+We will use the same layers (from the `covs` rasterBrick) as in the Random Forest classification for this classification exercise. As before, we need to extract all values into a `data.frame`.
+
+```{r, results='hide'}
+valuetable <- getValues(covs)
+head(valuetable)
+```
+
+Now we will construct a kmeans object using the `kmeans()` function. Like the Random Forest model, this object packages useful information about the resulting class membership. In this case, we will set the number of clusters to three, presumably corresponding to the three classes defined in our random forest classification.
+
+```{r, results='hide'}
+rm(fn) ## make sure to use the fn define below
+if(!file.exists(fn <- "data/km.rda")){
+  km <- kmeans(na.omit(valuetable), centers = 3, iter.max = 100, nstart = 10)
+  save(km, file=fn, compress="xz", ascii=FALSE)
+} else {
+  load(fn)
+}
+```
+
+```{r inspect_km}
+# km contains the clusters (classes) assigned to the cells
+head(km$cluster)
+unique(km$cluster) # displays unique values
+```
+
+
+As in the random forest classification, we used the `na.omit()` argument to avoid any `NA` values in the valuetable (recall that there is a region of NAs in the VCF layer). These NAs are problematic in the `kmeans()` function, but omitting them gives us another problem: the resulting vector of clusters (from 1 to 3) is shorter than the actual number of cells in the raster. 
+
+In other words: how do we know which clusters to assign to which cells? To answer that question, we need to have a kind of `mask` raster, indicating where the `NA` values throughout the `cov` rasterBrick are located.
+
+```{r}
+# create a blank raster with default values of 0
+rNA <- setValues(raster(covs), 0)
+# loop through layers of covs
+# assign a 1 to rNA wherever an NA is enountered in covs
+for(i in 1:nlayers(covs)){
+  rNA[is.na(covs[[i]])] <- 1
+}
+# convert rNA to an integer vector
+rNA <- getValues(rNA)
+```
+
+We now have a vector indicating with a value of 1 where the `NA`'s in the `cov` `brick` are. 
+Now that we know where the 'original' NAs are located, we can go ahead and assign the cluster values to a raster. 
+At these `NA` locations, we will not assign any of the cluster values, instead assigning an `NA`.
+
+First, we will insert these values into the original valuetable data.frame.
+
+```{r assignclasses}
+# convert valuetable to a data.frame
+valuetable <- as.data.frame(valuetable)
+# assign the cluster values (where rNA != 1)
+valuetable$class[rNA==0] <- km$cluster
+# assign NA to this column elsewhere
+valuetable$class[rNA==1] <- NA
+```
+
+Now we are finally ready to assign these cluster values to a raster. 
+This will represent our final classified raster.
+
+```{r, fig.lp="Unsupervised land cover classification resulting from k-means method. At this stage, the classes are undefined, so the colours are somewhat arbitrary."}
+# create a blank raster
+classes <- raster(covs)
+# assign values from the 'class' column of valuetable
+classes <- setValues(classes, valuetable$class)
+plot(classes, legend=FALSE, col=c("dark green", "orange", "light blue"))
+```
+
+
+These classes are much more difficult to interpret than those resulting from the random forest classification. We can see from the figure above that there is particularly high confusion between (what we might assume to be) the cropland and wetland classes. Clearly, with a good training dataset, a **supervised classification** can provide a reasonably accurate land cover classification. 
+
+However, unsupervised classification methods like k-means are useful for study areas for which little to no *a priori* data exist.
+
+**Question**
+Assuming there are no training data available, is there a way we could improve the k-means classification performed in this example? Which one is computationally faster between random forest and k-means (hint: try the `system.time()` function)?
+
+## Applying a raster sieve by clumping (detecting patches of connected cells)
+
+Although the land cover raster we created with the Random Forest method above is limited in the number of thematic classes it has, and we observed some confusion between wetland and cropland classes, it could be useful for constructing a forest mask. 
+To do so, we have to fuse (and remove) non-forest classes, and then clean up the remaining pixels by apply a sieve. To do this, we will make use of the `clump()` function in the raster package.
+
+
+```{r, include=FALSE, fig.lp="Application of a sieve on a forest mask. In the Queen's case, neighbours in all 8 directions are considered to be adjacent. In the Rook's case, only neighbours in the 4 NESW directions are considered adjacent, and diagonal neighbours are not considered."}
+
+# Make an NA-value raster based on the LC raster attributes
+formask <- setValues(raster(predLC), NA)
+# assign 1 to all cells corresponding to the forest class
+formask[predLC==2] <- 1
+plot(formask, col="dark green", legend = FALSE)
+```
+
+We now have a forest mask that can be used to isolate forest pixels for further analysis. 
+
+For some applications, however, we may only be interested in larger forest areas. 
+We may especially want to remove single forest pixels, as they may be a result of errors, or may not fit our definition of *forest*.
+
+In this section, we will construct 2 types of sieves to remove these types of pixels, following 2 definitions of *adjacency*. 
+
+In the first approach, the so-called *Queen's Case*, neighbours in all 8 directions are considered to be adjacent. 
+If any pixel cell has no neighbours in any of these 8 directions, we will remove that pixel by assigning an `NA` value. 
+
+First, we will use the `clump()` function in the raster package to identify clumps of raster cells. 
+This function arbitrarily assigns an ID to these clumps.
+
+```{r, results='hide', fig.show='hide'}
+# Group raster cells into clumps based on the Queen's Case
+if(!file.exists(fn <- "data/clumformask.grd")) {
+  forestclumps <- clump(formask, directions=8, filename=fn)
+} else {
+  forestclumps <- raster(fn)
+}
+plot(forestclumps)
+```
+
+When we inspect the frequency table with `freq()`, we can see the number of raster cells included in each of these clump IDs.
+
+```{r, fig.show='hide', results='hide'}
+# assign freqency table to a matrix
+clumpFreq <- freq(forestclumps)
+head(clumpFreq)
+tail(clumpFreq)
+```
+
+We can use the `count` column of this frequency table to select clump `ID`s with only 1 pixel - these are the pixel ``islands" that we want to eventually remove from our original forest mask.
+
+```{r, results='hide', fig.lp="Zoom of a forest mask before (left) and after (right) application of a sieve using the Queen's Case condition.", fig.width=10, dpi=72}
+# Coerce freq table to data.frame
+clumpFreq <- as.data.frame(clumpFreq)
+# which rows of the data.frame are only represented by one cell?
+str(which(clumpFreq$count==1))
+# which values do these correspond to?
+str(clumpFreq$value[which(clumpFreq$count==1)])
+# put these into a vector of clump ID's to be removed
+excludeID <- clumpFreq$value[which(clumpFreq$count==1)]
+# make a new forest mask to be sieved
+formaskSieve <- formask
+# assign NA to all clumps whose IDs are found in excludeID
+formaskSieve[forestclumps %in% excludeID] <- NA
+# zoom in to a small extent to check the results
+# Note: you can define your own zoom by using e <- drawExtent()
+e <- extent(c(811744.8, 812764.3, 849997.8, 850920.3))
+opar <- par(mfrow=c(1, 2)) # allow 2 plots side-by-side
+plot(formask, ext=e, col="dark green", legend=FALSE)
+plot(formaskSieve, ext=e, col="dark green", legend=FALSE)
+par(opar) # reset plotting window
+```
+
+We have successfully removed all *island* pixels from the forest mask using the `clump()` function. We can adjust our sieve criteria to only only directly adjacent (NESW) neighbours: the so-called *Rook's Case*. To accomplish this, simply repeat the code above, but supply the argument `directions=4` when calling `clump()`.
+
+```{r, eval=FALSE, echo=FALSE, results='hide', include=FALSE}
+# Group raster cells into clumps based on the Queen's Case
+?clump
+forestclumps <- clump(formask, directions=4)
+clumpFreq <- freq(forestclumps)
+# Coerce freq table to data.frame
+clumpFreq <- as.data.frame(clumpFreq)
+excludeID <- clumpFreq$value[which(clumpFreq$count==1)]
+# make a new forest mask to be sieved
+formaskSieve <- formask
+# assign NA to all clumps whose IDs are found in excludeID
+formaskSieve[forestclumps %in% excludeID] <- NA
+e <- extent(c(811744.8, 812764.3, 849997.8, 850920.3))
+opar <- par(mfrow = c(1, 2))
+plot(formask, ext=e, col="dark green", legend=FALSE)
+plot(formaskSieve, ext=e, col="dark green", legend=FALSE)
+par(opar)
+```
+
+We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask. 
+
+**Question:**
+How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectares? 
+
+Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
+
+## Working with thematic rasters
+
+As we have seen with the land cover rasters we derived using the random forest or k-means methods above, the values of a raster may be categorical, meaning they relate to a thematic class (e.g. 'forest' or 'wetland') rather than a quantitative value (e.g. NDVI or % Tree Cover). The raster dataset 'lulcGewata' is a raster with integer values representing Land Use and Land Cover (LULC) classes from a 2011 classification (using SPOT5 and ASTER source data).
+
+```{r}
+load("data/lulcGewata.rda")
+# check out the distribution of the values
+freq(lulcGewata)
+hist(lulcGewata)
+```
+
+This is a raster with integer values between 1 and 6, but for this raster to be meaningful at all, we need a lookup or attribute table to identify these classes. A data.frame defining these classes is also included in the rasta package:
+
+```{r}
+load("data/LUTGewata.rda")
+LUTGewata
+```
+
+This `data.frame` represents a lookup table for the raster we just loaded. The $ID$ column corresponds to the values taken on by the lulc raster, and the $Class$ column describes the LULC classes assigned. In `R` it is possible to add a attribute table to a raster. In order to do this, we need to coerce the raster values to a factor from an integer and add a raster attribute table.
+
+```{r}
+lulc <- as.factor(lulcGewata)
+# assign a raster attribute table (RAT)
+levels(lulc) <- LUTGewata
+lulc
+```
+
+In some cases it might be more useulf to visualize only one class at a time. The `layerize()` function in the raster package does this by producing a rasterBrick object with each layer representing the class membership of each class as a boolean.
+
+```{r, eval=TRUE, fig.show='hide'}
+classes <- layerize(lulc)
+# layer names follow the order of classes in the LUT
+names(classes) <- LUTGewata$Class
+plot(classes, legend=FALSE)
+```
+
+Now each class is represented by a separate layer representing class membership of each pixel with 0's and 1's. If we want to construct a forest mask as we did above, this is easily done by extracting the fifth layer of this rasterBrick and replacing 0's with NA's.
+
+```{r, results='hide'}
+forest <- raster(classes, 5)
+# is equivalent to:
+forest <- classes[[5]]
+# or (since the layers are named):
+forest <- classes$forest
+# replace 0's (non-forest) with NA's
+forest[forest==0] <- NA
+plot(forest, col="dark green", legend=FALSE)
+```
 
 # Today's summary
 
 We learned about:
 
-- test
-- test
+- Dealing with LandSat data
+- How to:
+    - perform a supervised and unsupervised classification using R scripts
+    - clump and sieve connected cells within a raster
+    - deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.
 
 # Excercise of today
 
-## Optional for bonus points
+Perform another Random Forest classification with 6 classes (found in the lulcGewata raster dataset) using all (or some) of the bands used in this tutorial (b2, b3, b4, ndvi and vcf). This time, derive your own training data from the lulcGewata image provided via the GitHub repository. This can be done interactively by creating polygons using the `drawPoly()` command
 
-# More info
+Your report on the results and accompanying code should include the following:
 
-About projections and code: https://www.nceas.ucsb.edu/scicomp/recipes/projections
+ - a plot of the original lulcGewata raster with a meaningful legend (ie. classes as characters)
+ - a plot of your training polygons
+ - a summary of the resulting randomForest model object
+ - the resulting thematic map with meaningful legend (as above)
+ - the output OOB confusion matrix with accuracy per class (with correct row and column headings)
+ - the variable importance ranks (mean accuracy decrease and mean Gini coefficient decrease)
+ - ** Extra points (if you have time)}: your own confusion matrix derived from an overlay of the original lulcGewata raster with your own LULC raster and resulting accuracy statistics. How do the two confusion matrices compare with each other? ** - 
+
+`Ben - here specifiy your question better?`
+
+
+In this exercise, also address the following questions:
+
+ - Which classes have the highest accuracy? Lowest?
+ - Is the importance ranking of the input bands different in this case to the 3-class classification we did earlier? If so, how, and what has changed in this case?
+ - Can you say something about class separability? Produce a series of `facet_wrap` plots using `ggplot()` to compare the land cover classes. Are there any classes which show high overlap? Is this consistent with the confusion matrix derived as part of your Random Forest model?
+
+You can address these questions directly in your script by inserting comments (preceded by a `#`) throughout your script and then submit the exercise as one file.
+
+The following code should help to get you started with selecting training data and proceeding with the supervised classification:
+
+```{r, eval=FALSE, echo=TRUE}
+# load in the training classes and Look-Up Table (LUT)
+load("data/LUTGewata.rda")
+load("data/lulcGewata.rda")    
+
+# plot lulcGewata with a meaningful legend (see LUTGewata)
+# make sure the classes correspond correctly!
+cols <- c("orange", "light green", "brown", "light pink", "dark green", "light blue")
+plot(lulcGewata, col=cols, legend=FALSE)
+legend("topright", legend=LUTGewata$Class, fill=cols)
+
+# draw a SpatialPolygons object in area purely represented by cropland
+# Note that drawPoly() doesn't work once you have added a legend() to the plot
+# so, first plot the raster again without the legend
+
+plot(lulcGewata, col=cols, legend=FALSE)
+cropland <- drawPoly(sp=TRUE)
+# click on "Finish" in the top-right corner (if using Rstudio) when finished
+# this outputs an sp (SpatialPolygons) object with 1 row (feature)
+# if you want more training data for a particular class:
+# append another polygon onto the same object using gUnion() of the rgeos package
+cropland <- gUnion(cropland, drawPoly(sp=TRUE))
+# when you are finished with this class,
+# be sure to set the coordinate reference system (CRS)
+projection(cropland) <- projection(lulcGewata)
+# and check
+projection(cropland)
+plot(lulcGewata)
+plot(cropland, add=TRUE)
+# convert it to a SpatialPolygonsDataFrame (ie. add a @data slot)
+cropland <- SpatialPolygonsDataFrame(cropland, data=data.frame(
+  class="cropland"), match.ID=FALSE)
+# do the same for the other 5 classes...
+# you may have to zoom in first for (e.g.) coffee investment areas
+plot(lulcGewata, col=cols, legend=FALSE)
+e <- drawExtent() # zoom into a coffee area
+plot(lulcGewata, col=cols, legend=FALSE, ext=e)
+# now define a training polygon
+coffee <- drawPoly(sp=TRUE)
+projection(coffee) <- projection(lulcGewata)
+# check
+plot(lulcGewata)
+plot(coffee, add=TRUE)
+# convert to SpatialPolygonsDataFrame
+coffee <- SpatialPolygonsDataFrame(coffee, data=data.frame(
+  class="coffee investment area"), match.ID=FALSE)
+# once all polygons have been drawn,
+# fusing them into one SpatialPolygons object is problematic,
+# because the Polygon ID's are not unique
+# use spChFIDs() from the sp package to solve this
+# e.g. for the cropland features
+cropland <- spChFIDs(cropland, "cropland")
+forest <- spChFIDs(forest, "forest")
+coffee <- spChFIDs(coffee, "coffee")
+# etc...
+# now they can be bound (2 at a time) as one object using spRbind (maptools)
+trainingPoly <- spRbind(cropland, forest)
+trainingPoly <- spRbind(trainingPoly, coffee)
+# etc...
+# check
+trainingPoly@data
+plot(lulcGewata)
+plot(trainingPoly, add=TRUE)
+### now proceed with the Random Forest classification
+### using the Gewata covariates as done earlier in the exercise
+```
+
+# More information
 
 # References
