@@ -200,7 +200,12 @@ To train the raster data, we need to convert our training data to the same type 
 
 ```{r}
 # assign 'Code' values to raster cells (where they overlap)
-classes <- rasterize(trainingPoly, ndvi, field='Code')
+if (!file.exists(fn <- "data/classes.grd")) {
+  classes <- rasterize(trainingPoly, ndvi, field='Code', filename=fn)
+} else {
+  classes <- raster(fn)
+}
+
 # set the dataType of the raster to INT1U
 # see ?dataType for more information
 dataType(classes) <- "INT1U"
