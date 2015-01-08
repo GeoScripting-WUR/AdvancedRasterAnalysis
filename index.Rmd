@@ -216,9 +216,6 @@ if (!file.exists(fn <- "data/classes.grd")) {
   classes <- raster(fn)
 }
 
-# set the dataType of the raster to INT1U
-# see ?dataType for more information
-dataType(classes) <- "INT1U"
 # define a colour scale for the classes
 # corresponding to: cropland, forest, wetland
 cols <- c("orange", "dark green", "light blue")
