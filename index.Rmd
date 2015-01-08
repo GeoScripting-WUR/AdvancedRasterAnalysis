@@ -29,6 +29,17 @@ Being able to:
 - construct a raster sieve using the `clump()` function
 - deal with thematic (catergorical maps)
 
+# Creating documented reports
+
+A great way to avoid clicking and copy pasting is to create a script that combines text (explanation of your script, introduction, or something else) and a R script and creates a report as an html file.
+
+You can create an .html from and .Rmd file. See the following link (https://rpubs.com/about/getting-started) for getting started and publishing your html to the www.
+
+Give it a try and see here for some more information:
+https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown
+
+If it does not work for you or if you have question let us know.
+
 # Advanced Raster Analysis
 
 ## Introduction to Landsat data used here.
@@ -253,7 +264,7 @@ head(valuetable)
 tail(valuetable)
 ```
 
-In inspecting this training data.frame, you will notice that a significant number of rows has the value NA for the class column, which will be problematic during the training phase. The rows with class=NA represent pixels found outside the training polygons, and these rows should therefore be removed before going ahead with deriving the Random Forest model.
+In inspecting this training data.frame, you will notice that a significant number of rows has the value `NA` for the class column, which will be problematic during the training phase. The rows with `class=NA` represent pixels found outside the training polygons, and these rows should therefore be removed before going ahead with deriving the Random Forest model.
 
 ```{r, results='hide'}
 # keep only rows where valuetable$classes has a value
@@ -264,14 +275,18 @@ tail(valuetable)
 valuetable$class <- factor(valuetable$class, levels = c(1:3))
 ```
 
-
 Now we have a convenient reference table which contains, for each of the three defined classes, 
 all known values for all covariates.
 Before proceeding with the classification, let's visualize the distribution of some of these covariates using `ggplot()`. 
 
-(Note: to make the following plots more readable, we will add a column with the class labels as characters. But we will not use this column when performing the classification.)
+If you want to learn more about the `ggplot2` package go to this great website and see the examples which will help you to understand how the below plots are made:
 
-```{r, include=FALSE}
+  - Try the examples here: http://docs.ggplot2.org/0.9.3.1/geom_histogram.html
+  - See also more examples here: http://www.cookbook-r.com/Graphs/Plotting_distributions_(ggplot2)/
+  
+Note: to make the following plots more readable, we will add a column with the class labels as characters. But we will not use this column when performing the classification.
+
+```{r, message=FALSE}
 library(ggplot2)
 # add a label column to valuetable
 valuetable$label <- with(valuetable, ifelse(class==1, "cropland", 
@@ -280,7 +295,7 @@ valuetable$label <- with(valuetable, ifelse(class==1, "cropland",
 # Now make the ggplots using valuetable$label to split the data into facets
 ```
 
-```{r, eval=FALSE}
+```{r, eval=TRUE, fig.width=12, fig.height=4}
 # 1. NDVI
 p1 <- ggplot(data=valuetable, aes(x=NDVI)) + 
   geom_histogram(binwidth=300) + 
@@ -303,7 +318,7 @@ p3 <- ggplot(data=valuetable, aes(x=gewataB3, y=gewataB4)) +
 p3
 ```
 
-```{r, fig.width=12}
+```{r, fig.width=12, fig.height=4}
 # 4. Bands 2 and 3
 p4 <- ggplot(data = valuetable, aes(x=gewataB2, y=gewataB3)) +
   stat_bin2d() +
@@ -486,10 +501,10 @@ However, unsupervised classification methods like k-means are useful for study a
 **Question**
 Assuming there are no training data available, is there a way we could improve the k-means classification performed in this example? Which one is computationally faster between random forest and k-means (hint: try the `system.time()` function)?
 
-## Applying a raster sieve by clumping (detecting patches of connected cells)
+## Applying a raster sieve by clumping 
 
 Although the land cover raster we created with the Random Forest method above is limited in the number of thematic classes it has, and we observed some confusion between wetland and cropland classes, it could be useful for constructing a forest mask. 
-To do so, we have to fuse (and remove) non-forest classes, and then clean up the remaining pixels by apply a sieve. To do this, we will make use of the `clump()` function in the raster package.
+To do so, we have to fuse (and remove) non-forest classes, and then clean up the remaining pixels by apply a sieve. To do this, we will make use of the `clump()` function (detecting patches of connected cells) in the raster package.
 
 
 ```{r, include=FALSE, fig.lp="Application of a sieve on a forest mask. In the Queen's case, neighbours in all 8 directions are considered to be adjacent. In the Rook's case, only neighbours in the 4 NESW directions are considered adjacent, and diagonal neighbours are not considered."}
@@ -623,7 +638,7 @@ plot(classes, legend=FALSE)
 
 Now each class is represented by a separate layer representing class membership of each pixel with 0's and 1's. If we want to construct a forest mask as we did above, this is easily done by extracting the fifth layer of this rasterBrick and replacing 0's with NA's.
 
-```{r, results='hide'}
+```{r}
 forest <- raster(classes, 5)
 # is equivalent to:
 forest <- classes[[5]]
@@ -646,9 +661,9 @@ We learned about:
 
 # Excercise of today
 
-Perform another Random Forest classification with 6 classes (found in the lulcGewata raster dataset) using all (or some) of the bands used in this tutorial (b2, b3, b4, ndvi and vcf). This time, derive your own training data from the lulcGewata image provided via the GitHub repository. This can be done interactively by creating polygons using the `drawPoly()` command
+Perform another Random Forest classification with 6 classes (found in the lulcGewata raster dataset) using all (or some) of the bands used in this tutorial (b2, b3, b4, ndvi and vcf). This time, derive your own training data from the lulcGewata image provided via the [GitHub repository]((https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis.git)). This can be done interactively by creating polygons using the `drawPoly()` command (see example code below).
 
-Your report on the results and accompanying code should include the following:
+Create a documented report (`Rmd`) and publish to [RPubs](https://rpubs.com/about/getting-started) that includes the following:
 
  - a plot of the original lulcGewata raster with a meaningful legend (ie. classes as characters)
  - a plot of your training polygons
@@ -656,22 +671,23 @@ Your report on the results and accompanying code should include the following:
  - the resulting thematic map with meaningful legend (as above)
  - the output OOB confusion matrix with accuracy per class (with correct row and column headings)
  - the variable importance ranks (mean accuracy decrease and mean Gini coefficient decrease)
+ 
  - ** Extra points (if you have time)}: your own confusion matrix derived from an overlay of the original lulcGewata raster with your own LULC raster and resulting accuracy statistics. How do the two confusion matrices compare with each other? ** - 
-
-`Ben - here specifiy your question better?`
-
 
 In this exercise, also address the following questions:
 
  - Which classes have the highest accuracy? Lowest?
- - Is the importance ranking of the input bands different in this case to the 3-class classification we did earlier? If so, how, and what has changed in this case?
+ - Is the importance ranking of the input bands different in this case to the 3-class classification we did earlier? 
+ If so, how, and what has changed in this case?
  - Can you say something about class separability? Produce a series of `facet_wrap` plots using `ggplot()` to compare the land cover classes. Are there any classes which show high overlap? Is this consistent with the confusion matrix derived as part of your Random Forest model?
 
-You can address these questions directly in your script by inserting comments (preceded by a `#`) throughout your script and then submit the exercise as one file.
+You can address these questions directly in your `Rmd` by inserting text and once you ready publish it to `RPubs` abd send the link to the html to me (Jan) by e-mail before Wednesday (1030).
 
 The following code should help to get you started with selecting training data and proceeding with the supervised classification:
 
 ```{r, eval=FALSE, echo=TRUE}
+library(raster)
+library(rgeos)
 # load in the training classes and Look-Up Table (LUT)
 load("data/LUTGewata.rda")
 load("data/lulcGewata.rda")    
@@ -738,6 +754,8 @@ plot(trainingPoly, add=TRUE)
 ### using the Gewata covariates as done earlier in the exercise
 ```
 
-# More information
+# References and links
 
-# References
+- https://rpubs.com/about/getting-started
+- https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown
+- [All the Rstudio documentation](https://support.rstudio.com/hc/en-us/categories/200035113-Documentation)
