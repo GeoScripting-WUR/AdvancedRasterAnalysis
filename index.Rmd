@@ -705,7 +705,7 @@ In this exercise, also address the following questions:
  If so, how, and what has changed in this case?
  - Can you say something about class separability? Produce a series of `facet_wrap` plots using `ggplot()` to compare the land cover classes. Are there any classes which show high overlap? Is this consistent with the confusion matrix derived as part of your Random Forest model?
 
-You can address these questions directly in your `Rmd` by inserting text and once you ready publish it to `RPubs` abd send the link to the html to me (Jan) by e-mail before Wednesday (1030).
+You can address these questions directly in your `Rmd` by inserting text and once you ready publish it to `RPubs` abd send the link to the html and GitHub repository to me (Jan) by e-mail before **Thursday** (1030) (extra time for this excercise).
 
 The following code should help to get you started with selecting training data and proceeding with the supervised classification:
 
