@@ -25,6 +25,7 @@ We will address the questions in the lesson and discuss if needed.
 ## Learning outcomes of today:
 
 Being able to:
+- publish a documented report using R
 - carry out a supervised and unsupervised classification on a series of raster layers
 - construct a raster sieve using the `clump()` function
 - deal with thematic (catergorical maps)
@@ -33,12 +34,22 @@ Being able to:
 
 A great way to avoid clicking and copy pasting is to create a script that combines text (explanation of your script, introduction, or something else) and a R script and creates a report as an html file.
 
-You can create an .html from and .Rmd file. See the following link (https://rpubs.com/about/getting-started) for getting started and publishing your html to the www.
+You can create an `.html` from and `.Rmd` file. See the following link (https://rpubs.com/about/getting-started) for getting started and publishing your html to the www.
 
 Give it a try and see here for some more information:
 https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown
 
-If it does not work for you or if you have question let us know.
+If is possible that you obtain the following error on windows:
+
+```{r, eval=FALSE}
+Error in function (type, msg, asError = TRUE)  : 
+  SSL certificate problem, verify that the CA cert is OK. Details:
+error:14090086:SSL routines:SSL3_GET_SERVER_CERTIFICATE:certificate verify failed
+Calls: rpubsUpload ... <Anonymous> -> .postForm -> .Call -> <Anonymous> -> fun
+Execution halted
+```
+
+This can be solved by the following [solution](https://stackoverflow.com/questions/22537180/error-while-publishing-in-r-pubs). More information about creating an `.Rprofile` file [here](http://www.statmethods.net/interface/customizing.html).
 
 # Advanced Raster Analysis
 
@@ -55,8 +66,6 @@ grid.raster(img)
 
 Part of a landsat scene, including bands 2-4 are included in the data provide here. 
 These data have been processed using the LEDAPS framework (http://ledaps.nascom.nasa.gov/), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
-
-
 
 We will begin exploring these data simply by downloading and visualizing them:
 
@@ -131,7 +140,7 @@ The Random Forest classification algorithm is an ensemble learning method that i
 
 Branches represent nodes of the decision trees, which are often thresholds defined for the measured (known) variables in the dataset. Leaves are the class labels assigned at the termini of the trees. Sampling many subsets at random will result in many trees being built. Classes are then assigned based on classes assigned by all of these trees based on a majority rule, as if each class assigned by a decision tree were considered to be a *vote*. 
 
-Figure [1](fig:random) gives a simple demonstration of how the random forest method works in principle. For a more complete description of the Random Forests classification method, see [here](http://stat-www.berkeley.edu/users/breiman/RandomForests/cc\textunderscore home.htm). For a ``friendlier" introduction, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
+Figure [1](fig:random) gives a simple demonstration of how the random forest method works in principle. For a more complete description of the Random Forests classification method, see [here](http://www.stat.berkeley.edu/~breiman/RandomForests/). For a ``friendlier" introduction, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
 
 
 ```{r random, echo=FALSE, fig.cap='Fig 1. Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.'}
@@ -219,14 +228,20 @@ str(trainingPoly@data)
 
 To train the raster data, we need to convert our training data to the same type using the \code{rasterize()} function. This function takes a spatial object (in this case a polygon object) and transfers the values to raster cells defined by a raster object. Here, we will define a new raster containing those values.
 
-```{r}
+```{r, eval=FALSE}
 # assign 'Code' values to raster cells (where they overlap)
+classes <- rasterize(trainingPoly, ndvi, field='Code')
+```
+
+```{r, message=FALSE, echo=FALSE, results='hide'}
 if (!file.exists(fn <- "data/classes.grd")) {
   classes <- rasterize(trainingPoly, ndvi, field='Code', filename=fn)
 } else {
   classes <- raster(fn)
 }
+```
 
+```{r}
 # define a colour scale for the classes
 # corresponding to: cropland, forest, wetland
 cols <- c("orange", "dark green", "light blue")
@@ -397,17 +412,26 @@ Since the VCF layer included NA's (which have also been excluded in our results)
 Now we can apply this model to the rest of the image and assign classes to all pixels. 
 Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond to the column names of the training table. We will use the `predict()` function from the `raster` package to predict class values based on the random forest model we have just constructed. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `randomForest()` function we applied earlier.
 
-```{r predictraster, fig.width=7}
-# check layer and column names
-names(covs)
-names(valuetable)
-# predict land cover using the RF model
+```{r, echo=FALSE, results='hide'}
 if (!file.exists(fn <- "data/predLC.grd")) {
   predLC <- predict(covs, model=modelRF, na.rm=TRUE, filename = fn)
 } else {
   predLC <- raster(fn)
 }
+```
 
+```{r}
+# check layer and column names
+names(covs)
+names(valuetable)
+```
+
+```{r, eval=FALSE}
+# predict land cover using the RF model
+predLC <- predict(covs, model=modelRF, na.rm=TRUE)
+```
+
+```{r, fig.width=7}
 # plot the results
 # recall: 1 = cropland, 2 = forest, 3 = wetland
 cols <- c("orange", "dark green", "light blue")
@@ -672,7 +696,7 @@ Create a documented report (`Rmd`) and publish to [RPubs](https://rpubs.com/abou
  - the output OOB confusion matrix with accuracy per class (with correct row and column headings)
  - the variable importance ranks (mean accuracy decrease and mean Gini coefficient decrease)
  
- - ** Extra points (if you have time)}: your own confusion matrix derived from an overlay of the original lulcGewata raster with your own LULC raster and resulting accuracy statistics. How do the two confusion matrices compare with each other? ** - 
+ - ** Extra points (if you have time): your own confusion matrix derived from an overlay of the original lulcGewata raster with your own LULC raster and resulting accuracy statistics. How do the two confusion matrices compare with each other? ** - 
 
 In this exercise, also address the following questions:
 
@@ -754,7 +778,9 @@ plot(trainingPoly, add=TRUE)
 ### using the Gewata covariates as done earlier in the exercise
 ```
 
-# References and links
+# More information
+
+- [Random Forest Classification: R versus Python!](http://blog.yhathq.com/posts/comparing-random-forests-in-python-and-r.html)
 
 - https://rpubs.com/about/getting-started
 - https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown
