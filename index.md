@@ -951,7 +951,7 @@ load("data/GewataB7.rda")
 - create an `lm()` model and show a summary (e.g. using `summary()`) of the model object you created. Which predictors (bands) are probably most important in predicting tree cover?
 - plot the predicted tree cover raster and compare with the original VCF raster.
 - compute the RMSE between your predicted and the actual tree cover values ([hint](https://www.kaggle.com/wiki/RootMeanSquaredError))
-- are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the random forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare.
+- are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the random forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
 
 
 # More information
