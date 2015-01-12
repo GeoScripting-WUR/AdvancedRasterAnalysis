@@ -39,7 +39,7 @@ You can create an `.html` from and `.Rmd` file. See the following link (https://
 * In RStudio, create a new R Markdown document by choosing File | New | R Markdown
     * select HTML as a default output format (see screenshot)
 
-```{r, echo=FALSE, fig.width=5}
+```{r, echo=FALSE, fig.width=4}
 library(png)
 library(grid)
 img <- readPNG("figs//DefaultOutput_Format.png")
@@ -48,7 +48,7 @@ grid.raster(img)
 
 * Click the Knit HTML button in the doc toolbar to preview your document.
 
-```{r, echo=FALSE, fig.width=10}
+```{r, echo=FALSE, fig.width=4}
 library(png)
 library(grid)
 img <- readPNG("figs//KnitHTML.png")
