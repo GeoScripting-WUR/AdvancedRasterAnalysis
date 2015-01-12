@@ -34,12 +34,33 @@ Being able to:
 
 A great way to avoid clicking and copy pasting is to create a script that combines text (explanation of your script, introduction, or something else) and a R script and creates a report as an html file.
 
-You can create an `.html` from and `.Rmd` file. See the following link (https://rpubs.com/about/getting-started) for getting started and publishing your html to the www.
+You can create an `.html` from and `.Rmd` file. See the following link (https://rpubs.com/about/getting-started) for getting started and publishing your html to the www:
 
-Give it a try and see here for some more information:
+* In RStudio, create a new R Markdown document by choosing File | New | R Markdown
+    * select HTML as a default output format (see screenshot)
+
+```{r, echo=FALSE, fig.width=5}
+library(png)
+library(grid)
+img <- readPNG("figs//DefaultOutput_Format.png")
+grid.raster(img)
+```
+
+* Click the Knit HTML button in the doc toolbar to preview your document.
+
+```{r, echo=FALSE, fig.width=10}
+library(png)
+library(grid)
+img <- readPNG("figs//KnitHTML.png")
+grid.raster(img)
+```
+
+* In the preview window, click the Publish button.
+
+Give it a try and see here for some more information on the syntax how the write a documented report.
 https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown
 
-If is possible that you obtain the following error on windows:
+If is possible that you obtain the following error on Windows Operation system:
 
 ```{r, eval=FALSE}
 Error in function (type, msg, asError = TRUE)  : 
@@ -655,11 +676,12 @@ We learned about:
 
 # Excercise of today
 
+## Description of the excercise
 Today we learned about how a `model` object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of `model` objects than what is returned by `randomForest()`. The most basic `model` object is a product of a linear regression returned by `lm()`.
 
 The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based several input data sources. Using Landsat band reflectance from one point in time, how well can we predict tree cover, using the existing VCF product as a response variable?
 
-**Task**
+## Methodology (tasks)
 
 Create a model object using `lm()` using Landsat band reflectance values as predictors for tree cover (VCF). Using the resulting `model` object, predict VCF values for the Gewata area.
 
@@ -678,6 +700,11 @@ load("data/GewataB7.rda")
 - compute the RMSE between your predicted and the actual tree cover values ([hint](https://www.kaggle.com/wiki/RootMeanSquaredError))
 - are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the random forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
 
+## Submission
+
+E-mail (Ben and Jan) a link to the published documented report (html) to RPubs (as described above) together with the link to your project GitHub repository for this assigment.
+
+Deadline: Friday 1030u
 
 # More information
 
