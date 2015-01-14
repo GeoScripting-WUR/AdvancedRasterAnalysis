@@ -274,7 +274,7 @@ Note: there is a handy `progress="text"` argument, which can be passed to many o
 
 Our goal in preprocessing these data is to have a table of values representing all layers (covariates) with *known* values/classes. To do this, we will first need to create a version of our rasterBrick only representing the training pixels. Here the `mask()` function from the raster package will be very useful.
 
-```{r, include=FALSE}
+```{r, include=TRUE}
 covmasked <- mask(covs, classes)
 plot(covmasked)
 # combine this new brick with the classes layer to make our input training dataset
@@ -528,7 +528,7 @@ Assuming there are no training data available, is there a way we could improve t
 Although the land cover raster we created with the Random Forest method above is limited in the number of thematic classes it has, and we observed some confusion between wetland and cropland classes, it could be useful for constructing a forest mask (since that class performed quite well). To do so, we have to fuse (and remove) non-forest classes, and then clean up the remaining pixels by apply a sieve. To do this, we will make use of the `clump()` function (detecting patches of connected cells) in the raster package.
 
 
-```{r, include=FALSE, fig.lp="Application of a sieve on a forest mask. In the Queen's case, neighbours in all 8 directions are considered to be adjacent. In the Rook's case, only neighbours in the 4 NESW directions are considered adjacent, and diagonal neighbours are not considered."}
+```{r, include=TRUE, fig.lp="Application of a sieve on a forest mask. In the Queen's case, neighbours in all 8 directions are considered to be adjacent. In the Rook's case, only neighbours in the 4 NESW directions are considered adjacent, and diagonal neighbours are not considered."}
 
 # Make an NA-value raster based on the LC raster attributes
 formask <- setValues(raster(predLC), NA)
