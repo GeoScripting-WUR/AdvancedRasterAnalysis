@@ -1,14 +1,14 @@
 ---
-title: 'Lesson 7: Advanced Raster Analysis'
 author: "Ben Devries, Jan Verbesselt, Loïc Dutrieux"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  html_document:
+  knitrBootstrap::bootstrap_document:
+    title: "Advanced Raster Analysis"
     theme: cosmo
-    toc: yes
-    toc_depth: 4
-    number_sections: true
+    menu: FALSE
 ---
+
+# [WUR Geoscripting](https://geoscripting-wur.github.io/) ![WUR logo](http://www.wageningenur.nl/upload/f9a0b5f2-15c5-4b84-9e14-20ef02f5e265_wur-logo.png)
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
@@ -25,21 +25,22 @@ We will address the questions in the lesson and discuss if needed.
 ## Learning outcomes of today:
 
 Being able to:
-- publish a documented report using R
-- carry out a supervised and unsupervised classification on a series of raster layers
-- construct a raster sieve using the `clump()` function
-- deal with thematic (catergorical maps)
+
+  - publish a documented report using R
+  - carry out a supervised and unsupervised classification on a series of raster layers
+  - construct a raster sieve using the `clump()` function
+  - deal with thematic (catergorical maps)
 
 # Creating documented reports
 
 A great way to avoid clicking and copy pasting is to create a script that combines text (explanation of your script, introduction, or something else) and a R script and creates a report as an html file.
 
-You can create an `.html` from and `.Rmd` file. See the following link (https://rpubs.com/about/getting-started) for getting started and publishing your html to the www:
+You can create an `.html` from a`.Rmd` file. Click on the following [link](https://rpubs.com/about/getting-started) for getting started and publishing your html to the www:
 
 * In RStudio, create a new R Markdown document by choosing File | New | R Markdown
     * select HTML as a default output format (see screenshot)
 
-```{r, echo=FALSE, fig.width=4}
+```{r, echo=FALSE, fig.width=4, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("figs//DefaultOutput_Format.png")
@@ -48,7 +49,7 @@ grid.raster(img)
 
 * Click the Knit HTML button in the doc toolbar to preview your document.
 
-```{r, echo=FALSE, fig.width=4}
+```{r, echo=FALSE, fig.width=4, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("figs//KnitHTML.png")
@@ -57,10 +58,7 @@ grid.raster(img)
 
 * In the preview window, click the Publish button.
 
-Give it a try and see here for some more information on the syntax how the write a documented report.
-https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown
-
-If is possible that you obtain the following error on Windows Operation system:
+> Note: It is possible that you obtain the following error on Windows Operation system:
 
 ```{r, eval=FALSE}
 Error in function (type, msg, asError = TRUE)  : 
