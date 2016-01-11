@@ -141,7 +141,7 @@ Note that both `hist()` and `pairs()` compute histograms and scatterplots based 
 
 Calling `pairs()` on a rasterBrick reveals potential correlations between the layers themselves. In the case of bands 2-4 of the gewata subset, we can see that band 2 and 3 (in the visual part of the EM spectrum) are highly correlated, while band 4 contains significant non-redundant information. 
 
-**Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?** 
+> **Question**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?** 
 
 ETM+ band 4 (nearly equivalent to band 5 in the Landsat 8 OLI sensor) is situated in the near infrared (NIR) region of the EM spectrum and is often used to described vegetation-related features.
 
@@ -158,7 +158,8 @@ Aside from the advantages of `calc()` and `overlay()` regarding memory usage, an
 
 ## Classifying raster data
 
-One of the most important tasks in analysis of remote sensing image analysis is image classification. In classifying the image, we take the information contained in the various bands (possibly including other synthetic bands such as NDVI or principle components). In this tutorial we will explore two approaches for image classification: 
+One of the most important tasks in analysis of remote sensing image analysis is image classification. In classifying the image, we take the information contained in the various bands (possibly including other synthetic bands such as NDVI or principle components). In this tutorial we will explore two approaches for image classification:
+
   - supervised (random forest) classification
   - unsupervised (k-means).
 
@@ -251,13 +252,6 @@ To train the raster data, we need to convert our training data to the same type 
 ```{r, eval=FALSE}
 # assign 'Code' values to raster cells (where they overlap)
 classes <- rasterize(trainingPoly, ndvi, field='Code')
-# define a colour scale for the classes (as above)
-# corresponding to: cropland, forest, wetland
-cols <- c("orange", "dark green", "light blue")
-# plot without a legend
-plot(classes, col=cols, legend=FALSE)
-# add a customized legend
-legend("topright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
 ```
 
 ```{r, message=FALSE, echo=FALSE, results='hide'}
@@ -266,6 +260,17 @@ if (!file.exists(fn <- "data/classes.grd")) {
 } else {
   classes <- raster(fn)
 }
+```
+
+```{r}
+# plotting
+# define a colour scale for the classes (as above)
+# corresponding to: cropland, forest, wetland
+cols <- c("orange", "dark green", "light blue")
+# plot without a legend
+plot(classes, col=cols, legend=FALSE)
+# add a customized legend
+legend("topright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
 ```
 
 Note: there is a handy `progress="text"` argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the`rasterize()` command above.
@@ -342,7 +347,7 @@ points(band4 ~ band3, data = val_wetland, pch = ".", col = "light blue")
 legend("topright", legend=c("cropland", "forest", "wetland"), fill=c("orange", "dark green", "light blue"), bg="white")
 ```
 
-*Try to produce the same scatterplot plot as in #3 looking at the relationship between other bands (e.g. bands 2 and 3, band 4 and VCF, etc.)*
+> Try to produce the same scatterplot plot as in #3 looking at the relationship between other bands (e.g. bands 2 and 3, band 4 and VCF, etc.)*
 
 We can see from these distributions that these covariates may do well in classifying forest pixels, but we may expect some confusion between cropland and wetland (although the individual bands may help to separate these classes). When performing this classification on large datasets and with a large amount of training data, now may be a good time to save this table using the `write.csv()` command, in case something goes wrong after this point and you need to start over again.
 
@@ -401,8 +406,7 @@ First, the mean decrease in accuracy indicates the amount by which the classific
 
 In this case, it seems that Gewata bands 3 and 4 have the highest impact on accuracy, while bands 3 and 2 score highest with the Gini impurity criterion. For especially large datasets, it may be helpful to know this information, and leave out less important variables for subsequent runs of the `randomForest()` function.
 
-**Question**:
-Since the VCF layer included NA's (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate random forest model as above, but excluding this layer. What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What affect does leaving this variable out have on the processing time (hint: use `system.time()`)?
+> **Question**: Since the VCF layer included NA's (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate random forest model as above, but excluding this layer. What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What affect does leaving this variable out have on the processing time (hint: use `system.time()`)?
 
 Now we can apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `raster` package to predict class values based on the random forest model we have just constructed. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `randomForest()` function we applied earlier.
 
@@ -518,8 +522,7 @@ These classes are much more difficult to interpret than those resulting from the
 
 However, unsupervised classification methods like k-means are useful for study areas for which little to no *a priori* data exist.
 
-**Question**
-Assuming there are no training data available, is there a way we could improve the k-means classification performed in this example? Which one is computationally faster between random forest and k-means (hint: try the `system.time()` function)?
+> **Question** Assuming there are no training data available, is there a way we could improve the k-means classification performed in this example? Which one is computationally faster between random forest and k-means (hint: try the `system.time()` function)?
 
 ## Applying a raster sieve by clumping 
 
@@ -610,8 +613,7 @@ par(opar)
 
 We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask. 
 
-**Question:**
-How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectares? Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
+> **Question:** How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectares? Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
 
 ## Working with thematic rasters
 
@@ -668,6 +670,8 @@ We learned about:
 
 - Dealing with Landsat data
 - How to:
+    
+    - report results and publish as an html
     - perform a supervised and unsupervised classification using R scripts
     - clump and sieve connected cells within a raster
     - deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.
@@ -700,8 +704,7 @@ load("data/GewataB7.rda")
 
 ## Submission
 
-E-mail (Ben and Jan) a link to the published documented report (html) to RPubs (as described above) together with the link to your project GitHub repository for this assigment.
-
+Publish a documented report to RPubs and copy pased the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.
 Deadline: Friday 1030u
 
 # More information
