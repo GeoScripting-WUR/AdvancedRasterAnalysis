@@ -12,7 +12,7 @@ output:
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
-opts_chunk$set(fig.align='center')
+opts_chunk$set(fig.width=5, fig.align='center', fig.height=5, dpi=72)
 ```
 
 # Today's items
