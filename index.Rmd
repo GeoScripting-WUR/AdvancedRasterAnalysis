@@ -12,7 +12,7 @@ output:
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
-opts_chunk$set(fig.width=5, fig.align='center', fig.height=5, dpi=72)
+opts_chunk$set(fig.align='center')
 ```
 
 # Today's items
@@ -40,7 +40,7 @@ You can create an `.html` from a`.Rmd` file. Click on the following [link](https
 * In RStudio, create a new R Markdown document by choosing File | New | R Markdown
     * select HTML as a default output format (see screenshot)
 
-```{r, echo=FALSE, fig.width=4, fig.align='center'}
+```{r, echo=FALSE, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("figs//DefaultOutput_Format.png")
@@ -49,7 +49,7 @@ grid.raster(img)
 
 * Click the Knit HTML button in the doc toolbar to preview your document.
 
-```{r, echo=FALSE, fig.width=4, fig.align='center'}
+```{r, echo=FALSE, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("figs//KnitHTML.png")
