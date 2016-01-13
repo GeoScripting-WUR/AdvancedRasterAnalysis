@@ -1863,6 +1863,28 @@ load("data/GewataB7.rda")
 <ul>
 <li>produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)?</li>
 <li>create an <code>lm()</code> model and show a summary (e.g. using <code>summary()</code>) of the model object you created. Which predictors (bands) are probably most important in predicting tree cover?</li>
+</ul>
+<blockquote>
+<p>Hint:</p>
+</blockquote>
+<div class="row">
+<button class="source R toggle btn btn-xs btn-primary">
+<span class="glyphicon glyphicon-chevron-down"></span> R source
+</button>
+<pre style=""><code class="source r">## build a brick containing all data
+alldata <- brick(GewataB1, GewataB2, GewataB3, GewataB4, GewataB5, GewataB7, vcfGewata)
+names(alldata) <- c("band1", "band2", "band3", "band4", "band5", "band7", "VCF")
+
+## extract all data to a data.frame
+df <- as.data.frame(getValues(alldata))</code></pre>
+</div>
+<blockquote>
+<p>Now build a <code>lm()</code> model in the same way as you build the randomForest model in <a href="http://geoscripting-wur.github.io/VectorRaster/">yesterday's lesson</a></p>
+</blockquote>
+<blockquote>
+<p>See here for more info about <code>summary</code>: <a href="http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination">link</a></p>
+</blockquote>
+<ul>
 <li>plot the predicted tree cover raster and compare with the original VCF raster.</li>
 <li>compute the RMSE between your predicted and the actual tree cover values (<a href="https://www.kaggle.com/wiki/RootMeanSquaredError">hint</a>)</li>
 <li>are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the random forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. <em>Hint</em> - see <code>?zonal()</code>.</li>
