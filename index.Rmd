@@ -704,7 +704,7 @@ load("data/GewataB7.rda")
 ## Submission
 
 Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.
-Deadline: Thursday 1030u
+Deadline: Friday 1030u
 
 # More information
 
