@@ -72,7 +72,7 @@ This can be solved by the following [solution](https://stackoverflow.com/questio
 
 # Advanced Raster Analysis
 
-## Introduction to Landsat data used here.
+## Introduction to Landsat data used here
 
 Since being released to the public, the Landsat data archive has become an invaluable tool for environmental monitoring. With a historical archive reaching back to the 1970's, the release of these data has resulted in a spur of time series based methods. In this tutorial, we will work with time series data from the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor. Landsat scenes are delivered via the USGS as a number of image layers representing the different bands captured by the sensors. In the case of the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor, the bands are shown in the figure below. Using different combination of these bands can be useful in describing land features and change processes.
 
@@ -83,8 +83,8 @@ img <- readPNG("figs//landsat_bands.png")
 grid.raster(img)
 ```
 
-Part of a landsat scene, including bands 2-4 are included in the data provide here. 
-These data have been processed using the LEDAPS framework (http://ledaps.nascom.nasa.gov/), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
+Part of a landsat scene, including bands 2-4 are included in the data provided here. 
+These data have been processed using the [LEDAPS framework](http://ledapsweb.nascom.nasa.gov/), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
 
 We will begin exploring these data simply by downloading and visualizing them:
 
@@ -141,13 +141,13 @@ Note that both `hist()` and `pairs()` compute histograms and scatterplots based 
 
 Calling `pairs()` on a rasterBrick reveals potential correlations between the layers themselves. In the case of bands 2-4 of the gewata subset, we can see that band 2 and 3 (in the visual part of the EM spectrum) are highly correlated, while band 4 contains significant non-redundant information. 
 
-> **Question**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?** 
+> **Question**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
 
-ETM+ band 4 (nearly equivalent to band 5 in the Landsat 8 OLI sensor) is situated in the near infrared (NIR) region of the EM spectrum and is often used to described vegetation-related features.
+ETM+ band 4 (nearly equivalent to band 5 in the Landsat 8 OLI sensor) is situated in the near infrared (NIR) region of the EM spectrum and is often used to describe vegetation-related features.
 
 We observe a strong correlation between two of the Landsat bands of the gewata subset, but a very different distribution of values in band 4 (NIR). This distribution stems from the fact that vegetation reflects very highly in the NIR range, compared to the visual range of the EM spectrum. A commonly used metric for assessing vegetation dynamics, the normalized difference vegetation index (NDVI), explained in the previous lesson, takes advantage of this fact and is computed from Landsat bands 3 (visible red) and 4 (near infra-red).
 
-In the previous lesson, we explored several ways to calculate NDVI, using direct raster algebra, `calc()` or `overlay()`. Since we will be using NDVI again later in this tutorial, let's calculated it again and store it in our workspace using `overlay()`.
+In the previous lesson, we explored several ways to calculate NDVI, using direct raster algebra, `calc()` or `overlay()`. Since we will be using NDVI again later in this tutorial, let's calculate it again and store it in our workspace using `overlay()`.
 
 ```{r}
 ndvi <- overlay(GewataB4, GewataB3, fun=function(x,y){(x-y)/(x+y)})
@@ -169,7 +169,7 @@ The Random Forest classification algorithm is an ensemble learning method that i
 
 Branches represent nodes of the decision trees, which are often thresholds defined for the measured (known) variables in the dataset. Leaves are the class labels assigned at the termini of the trees. Sampling many subsets at random will result in many trees being built. Classes are then assigned based on classes assigned by all of these trees based on a majority rule, as if each class assigned by a decision tree were considered to be a *vote*. 
 
-Figure [1](fig:random) gives a simple demonstration of how the random forest method works in principle. For a an introduction to the random forest algorithm, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
+Figure [1](fig:random) gives a simple demonstration of how the random forest method works in principle. For an introduction to the random forest algorithm, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
 
 
 ```{r random, echo=FALSE, fig.cap='Fig 1. Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.'}
@@ -216,7 +216,7 @@ covs <- addLayer(gewata, ndvi, vcfGewata)
 plot(covs)
 ```
 
-You'll notice that we didn't give our NDVI layer a name yet. It's good to make sure that the raster layer names make sense, so you don't forget which band is which later on. Let's change all the layer names (make sure you get the order right!)~.
+You'll notice that we didn't give our NDVI layer a name yet. It's good to make sure that the raster layer names make sense, so you don't forget which band is which later on. Let's change all the layer names (**make sure you get the order right!**).
 
 ```{r, fig.width=15}
 names(covs) <- c("band2", "band3", "band4", "NDVI", "VCF")
@@ -295,7 +295,7 @@ We will use `getValues()` to extract all of the values from the layers of the ra
 valuetable <- getValues(trainingbrick)
 ```
 
-If you print `valuetable` to the console, you will notice that alot of the rows are filled with `NA`. This is because all raster cell values have been taken, include those with NA values. We can get rid of these rows by using the `na.omit()` function.
+If you print `valuetable` to the console, you will notice that a lot of the rows are filled with `NA`. This is because all raster cell values have been taken, include those with NA values. We can get rid of these rows by using the `na.omit()` function.
 
 ```{r}
 valuetable <- na.omit(valuetable)
@@ -347,7 +347,7 @@ points(band4 ~ band3, data = val_wetland, pch = ".", col = "light blue")
 legend("topright", legend=c("cropland", "forest", "wetland"), fill=c("orange", "dark green", "light blue"), bg="white")
 ```
 
-> Try to produce the same scatterplot plot as in #3 looking at the relationship between other bands (e.g. bands 2 and 3, band 4 and VCF, etc.)*
+> Try to produce the same scatterplot plot as in #3 looking at the relationship between other bands (e.g. bands 2 and 3, band 4 and VCF, etc.)
 
 We can see from these distributions that these covariates may do well in classifying forest pixels, but we may expect some confusion between cropland and wetland (although the individual bands may help to separate these classes). When performing this classification on large datasets and with a large amount of training data, now may be a good time to save this table using the `write.csv()` command, in case something goes wrong after this point and you need to start over again.
 
@@ -375,7 +375,7 @@ if(!file.exists("data/modelRF.rda")){
 }
 ```
 
-Since the random forest method involves the building and testing of many classification trees (the 'forest'), it is a computationally expensive step (and could take alot of memory for especially large training datasets). When this step is finished, it would be a good idea to save the resulting object with the `save()` command. Any R object can be saved as an `.rda` file and reloaded into future sessions using `load()`.
+Since the random forest method involves the building and testing of many classification trees (the 'forest'), it is a computationally expensive step (and could take a lot of memory for especially large training datasets). When this step is finished, it would be a good idea to save the resulting object with the `save()` command. Any R object can be saved as an `.rda` file and reloaded into future sessions using `load()`.
 
 The resulting object from the `randomForest()` function is a specialized object of class "randomForest", which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
 
@@ -446,7 +446,7 @@ Note that the `predict()` function also takes arguments that can be passed to `w
 
 In the absence of training data, an unsupervised classification can be carried out. Unsupervised classification methods assign classes based on inherent structures in the data without resorting to training of the algorithm. One such method, the k-means method, divides data into clusters based on Euclidean distances from cluster means in a feature space.
 
-[More information on the theory behind k-means clustering](http://home.deib.polimi.it/matteucc/Clustering/tutorial_html/kmeans.html\#macqueen).
+[More information on the theory behind k-means clustering](http://home.deib.polimi.it/matteucc/Clustering/tutorial_html/kmeans.html).
 
 We will use the same layers (from the `covs` rasterBrick) as in the Random Forest classification for this classification exercise. As before, we need to extract all values into a `data.frame`. But this time we will extract all values, since we are not limited to a training dataset.
 
@@ -526,7 +526,7 @@ However, unsupervised classification methods like k-means are useful for study a
 
 ## Applying a raster sieve by clumping 
 
-Although the land cover raster we created with the Random Forest method above is limited in the number of thematic classes it has, and we observed some confusion between wetland and cropland classes, it could be useful for constructing a forest mask (since that class performed quite well). To do so, we have to fuse (and remove) non-forest classes, and then clean up the remaining pixels by apply a sieve. To do this, we will make use of the `clump()` function (detecting patches of connected cells) in the raster package.
+Although the land cover raster we created with the Random Forest method above is limited in the number of thematic classes it has, and we observed some confusion between wetland and cropland classes, it could be useful for constructing a forest mask (since that class performed quite well). To do so, we have to fuse (and remove) non-forest classes, and then clean up the remaining pixels by applying a sieve. To do this, we will make use of the `clump()` function (detecting patches of connected cells) in the raster package.
 
 
 ```{r, include=TRUE, fig.lp="Application of a sieve on a forest mask. In the Queen's case, neighbours in all 8 directions are considered to be adjacent. In the Rook's case, only neighbours in the 4 NESW directions are considered adjacent, and diagonal neighbours are not considered."}
@@ -566,7 +566,7 @@ head(clumpFreq)
 tail(clumpFreq)
 ```
 
-We can use the `count` column of this frequency table to select clump `ID`s with only 1 pixel - these are the pixel ``islands" that we want to eventually remove from our original forest mask.
+We can use the `count` column of this frequency table to select clump `ID`s with only 1 pixel - these are the pixel "islands" that we want to eventually remove from our original forest mask.
 
 ```{r, results='hide', fig.lp="Zoom of a forest mask before (left) and after (right) application of a sieve using the Queen's Case condition.", fig.width=10, dpi=72}
 # Coerce freq table to data.frame
@@ -590,7 +590,7 @@ plot(formaskSieve, ext=e, col="dark green", legend=FALSE)
 par(opar) # reset plotting window
 ```
 
-We have successfully removed all *island* pixels from the forest mask using the `clump()` function. We can adjust our sieve criteria to only only directly adjacent (NESW) neighbours: the so-called *Rook's Case*. To accomplish this, simply repeat the code above, but supply the argument `directions=4` when calling `clump()`.
+We have successfully removed all *island* pixels from the forest mask using the `clump()` function. We can adjust our sieve criteria to only directly adjacent (NESW) neighbours: the so-called *Rook's Case*. To accomplish this, simply repeat the code above, but supply the argument `directions=4` when calling `clump()`.
 
 ```{r, eval=FALSE, echo=FALSE, results='hide', include=FALSE}
 # Group raster cells into clumps based on the Queen's Case
@@ -626,14 +626,14 @@ freq(lulcGewata)
 hist(lulcGewata)
 ```
 
-This is a raster with integer values between 1 and 6, but for this raster to be meaningful at all, we need a lookup or attribute table to identify these classes. A data.frame defining these classes is also included in the lesson repository:
+This is a raster with integer values between 1 and 6, but for this raster to be meaningful at all, we need a lookup or attribute table to identify these classes. A `data.frame` defining these classes is also included in the lesson repository:
 
 ```{r}
 load("data/LUTGewata.rda")
 LUTGewata
 ```
 
-This `data.frame` represents a lookup table for the raster we just loaded. The `$ID` column corresponds to the values taken on by the lulc raster, and the `$Class` column describes the LULC classes assigned. In `R` it is possible to add a attribute table to a raster. In order to do this, we need to coerce the raster values to a factor from an integer and add a raster attribute table.
+This `data.frame` represents a lookup table for the raster we just loaded. The `$ID` column corresponds to the values taken on by the lulc raster, and the `$Class` column describes the LULC classes assigned. In `R` it is possible to add an attribute table to a raster. In order to do this, we need to coerce the raster values to a factor from an integer and add a raster attribute table.
 
 ```{r}
 lulc <- as.factor(lulcGewata)
@@ -669,8 +669,7 @@ plot(forest, col="dark green", legend=FALSE)
 We learned about:
 
 - Dealing with Landsat data
-- How to:
-    
+- How to:    
     - report results and publish as an html
     - perform a supervised and unsupervised classification using R scripts
     - clump and sieve connected cells within a raster
@@ -681,7 +680,7 @@ We learned about:
 ## Description of the excercise
 Today we learned about how a `model` object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of `model` objects than what is returned by `randomForest()`. The most basic `model` object is a product of a linear regression returned by `lm()`.
 
-The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based several input data sources. Using Landsat band reflectance from one point in time, how well can we predict tree cover, using the existing VCF product as a response variable?
+The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based on several input data sources. Using Landsat band reflectance from one point in time, how well can we predict tree cover, using the existing VCF product as a response variable?
 
 ## Methodology (tasks)
 
@@ -704,8 +703,8 @@ load("data/GewataB7.rda")
 
 ## Submission
 
-Publish a documented report to RPubs and copy pased the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.
-Deadline: Friday 1030u
+Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.
+Deadline: Thursday 1030u
 
 # More information
 
