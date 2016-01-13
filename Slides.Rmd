@@ -1,0 +1,114 @@
+---
+title: "Advanced Raster"
+author: "Jan Verbesselt"
+date: "13 Jan 2016"
+output: slidy_presentation
+---
+
+# Excercise RasterVector
+
+All ok? Any questions?
+
+# Examples
+
+```{r, eval=FALSE}
+NDVI <- list.files(path='data/', pattern = glob2rx('*.grd'), full.names=TRUE)
+NDVIstack <- stack(NDVI)
+NDVI
+```
+
+```{r, eval=FALSE}
+unzip('data/NDVI_data.zip', exdir=ifolder)  # unzip NDVI data
+NDVIlist <- list.files(path=ifolder,pattern = '+.grd$', full.names=TRUE) # list NDVI raster
+NDVI_12 <- stack(NDVIlist) # NDVI rasters
+```
+
+# More
+
+```{r, eval=FALSE}
+# downloading and preparing MODIS NDVI data
+download.file("https://github.com/GeoScripting-WUR/VectorRaster/raw/gh-pages/data/MODIS.zip", "data/MODIS.zip", method="wget")
+unzip("data/MODIS.zip", exdir="data/")
+modisPath <- list.files(path="data/", pattern = glob2rx('MO*.grd'), full.names = TRUE)
+NLmodis <- brick(modisPath)
+```
+
+# Solution (Thanks to Loïc Dutrieux)
+
+---
+
+Use of extract.
+
+```{r, eval=FALSE}
+?extract
+## S4 method for signature 'Raster,SpatialPolygons'
+extract(x, y, fun=NULL, na.rm=FALSE, weights=FALSE, cellnumbers=FALSE,
+     small=TRUE, df=FALSE, layer, nl, factors=FALSE, sp=FALSE, ...)
+```
+
+`sp = TRUE` will return the initial SPDF, with the extracted values appended to the `@data` slot.
+
+* No need to run for each feature independently
+* Also you can extract all layers of the raster brick at once
+* Watch out for NAs
+
+```{r}
+a <- c(1,2,3,4,5,NA)
+a
+mean(a)
+mean(a, na.rm = TRUE)
+```
+
+---
+
+# Subset to identify the greenest city
+
+```{r, eval=FALSE}
+# Find out the greenest city in January
+maxJanuarySPDF <- green[green$January == max(green$January),]
+maxAugustSPDF <- green[green$August == max(green$August),]
+
+# Or using subset() on the dataframe only
+greenDf <- green@data
+# The subset= argument selects rows; the select= argument selects columns
+subset(greenDf, subset = January == max(greenDf$January), select = c(NAME_2, January))
+subset(greenDf, subset = August == max(greenDf$August), select = c(NAME_2, August))
+```
+
+Subset():
+
+* Only works on dataframes (spdf@data)
+* `subset =` selects row
+* `select =` selects columns
+
+
+# More
+
+Provide some feedback to the other teams! 
+
+There are lot's of different solutions for the same step
+
+# Tip of the day
+
+[R-SIG-GEO](https://stat.ethz.ch/mailman/listinfo/r-sig-geo)
+
+[And here for an overview](http://r-sig-geo.2731867.n2.nabble.com/)
+
+Also check out: 
+
+  *  GitHub Education
+  *  Microsoft Azure
+  *  DreamSpark
+    
+# Tutorial of today
+
+Any questions?
+
+# Todays lesson
+
+[Advanced Raster](https://geoscripting-wur.github.io/AdvancedRasterAnalysis/)
+
+Deadline Friday morning 1030u!
+Finalise all the excercises!
+
+
