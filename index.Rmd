@@ -136,7 +136,7 @@ hist(gewata)
 
 When we plot the histogram of the `RasterBrick`, the scales of the axes and the bin sizes are not equivalent, which could be problematic. This can be solved by adjusting these paramters in `hist()`, which requires extra consideration. The raster `hist()` function inherits arguments from the function of the same name from the `graphics` package. To view additional arguments, type:
 
-```{r, results='hide', message=FALSE, include=TRUE}
+```{r, eval=FALSE}
 ?graphics::hist
 ```
 
