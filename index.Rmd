@@ -719,7 +719,7 @@ load("data/GewataB7.rda")
 - Produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)?
 - Create an `lm()` model and show a summary (e.g. using `summary()`) of the model object you created. Which predictors (bands) are probably most important in predicting tree cover?
 
-> Hint:
+Hint:
 
 ```{r, eval=FALSE}
 ## Build a brick containing all data
@@ -733,9 +733,10 @@ df <- as.data.frame(getValues(alldata))
 > Now build a `lm()` model in the same way as you build the randomForest model in 
  [yesterday's lesson](http://geoscripting-wur.github.io/VectorRaster/)
 
-> See here for more info about `summary()` of the `lm` model: 
--  [link](http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination)
-- [alse here](http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output)
+See here for more info about `summary()` of the `lm` model: 
+
+- [link](http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination)
+- [also here](http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output)
 
 - Plot the predicted tree cover raster and compare with the original VCF raster.
 - Compute the RMSE between your predicted and the actual tree cover values ([hint](https://www.kaggle.com/wiki/RootMeanSquaredError))
