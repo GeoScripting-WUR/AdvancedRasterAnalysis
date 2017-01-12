@@ -1895,9 +1895,7 @@ load("data/GewataB7.rda")
 <li>Produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)?</li>
 <li>Create an <code>lm()</code> model and show a summary (e.g. using <code>summary()</code>) of the model object you created. Which predictors (bands) are probably most important in predicting tree cover?</li>
 </ul>
-<blockquote>
 <p>Hint:</p>
-</blockquote>
 <div class="row">
 <button class="source R toggle btn btn-xs btn-primary">
 <span class="glyphicon glyphicon-chevron-down"></span> R source
@@ -1912,13 +1910,13 @@ df <- as.data.frame(getValues(alldata))</code></pre>
 <blockquote>
 <p>Now build a <code>lm()</code> model in the same way as you build the randomForest model in <a href="http://geoscripting-wur.github.io/VectorRaster/">yesterday's lesson</a></p>
 </blockquote>
-<blockquote>
-<p>See here for more info about <code>summary()</code> of the <code>lm</code> model: - <a href="http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination">link</a> - <a href="http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output">alse here</a></p>
-</blockquote>
+<p>See here for more info about <code>summary()</code> of the <code>lm</code> model:</p>
 <ul>
+<li><a href="http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination">link</a></li>
+<li><p><a href="http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output">also here</a></p></li>
 <li>Plot the predicted tree cover raster and compare with the original VCF raster.</li>
 <li>Compute the RMSE between your predicted and the actual tree cover values (<a href="https://www.kaggle.com/wiki/RootMeanSquaredError">hint</a>)</li>
-<li>Are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the Random Forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. <em>Hint</em> - see <code>?zonal()</code>.</li>
+<li><p>Are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the Random Forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. <em>Hint</em> - see <code>?zonal()</code>.</p></li>
 </ul>
 <h2 id="submission">Submission</h2>
 <p>Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center. Deadline: Friday 10:30</p>
