@@ -1,5 +1,5 @@
 ---
-author: "Ben Devries, Jan Verbesselt, Loïc Dutrieux, Dainius Masiliūnas"
+author: "Ben Devries, Jan Verbesselt, Loïc Dutrieux, Dainius Masiliūnas, Astrid Bos"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   knitrBootstrap::bootstrap_document:
@@ -29,7 +29,7 @@ Being able to:
   - publish a documented report using R
   - carry out a supervised and unsupervised classification on a series of raster layers
   - construct a raster sieve using the `clump()` function
-  - deal with thematic (catergorical maps)
+  - deal with thematic (categorical maps)
 
 # Creating documented reports
 
@@ -102,7 +102,7 @@ grid.raster(img)
 ```
 
 Part of a landsat scene, including bands 2-4 are included in the data provided here. 
-These data have been processed using the [LEDAPS framework](http://ledapsweb.nascom.nasa.gov/), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
+These data have been processed using the [LEDAPS framework](http://dx.doi.org/10.3334/ORNLDAAC/1080), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
 
 We will begin exploring these data simply by downloading and visualizing them:
 
@@ -282,7 +282,9 @@ if (!file.exists(fn <- "data/classes.grd")) {
   classes <- raster(fn)
 }
 ```
+You might get warnings like `In '[<-'('*tmp*', cnt, value = p@polygons[[i]]@Polygons[[j]]) :  implicit list embedding of S4 objects is deprecated`. You can ignore these for now.
 
+**Note**: there is a handy `progress="text"` argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the`rasterize()` command above.
 ```{r}
 ## Plotting
 # Define a colour scale for the classes (as above)
@@ -294,7 +296,7 @@ plot(classes, col=cols, legend=FALSE)
 legend("topright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
 ```
 
-**Note**: there is a handy `progress="text"` argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the`rasterize()` command above.
+
 
 Our goal in preprocessing these data is to have a table of values representing all layers (covariates) with *known* values/classes. To do this, we will first need to create a version of our `RasterBrick` only representing the training pixels. Here the `mask()` function from the raster package will be very useful.
 
@@ -739,18 +741,20 @@ See here for more info about `summary()` of the `lm` model:
 - [also here](http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output)
 
 - Plot the predicted tree cover raster and compare with the original VCF raster.
-- Compute the RMSE between your predicted and the actual tree cover values ([hint](https://www.kaggle.com/wiki/RootMeanSquaredError))
+- Compute the RMSE between your predicted and the actual tree cover values ([hint](http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r))
 - Are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the Random Forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
 
 ## Submission
 
 Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.
-Deadline: Friday 10:30
+
+Deadline: **Thursday 19 January 11:00**
+
+Deadline sending feedback to other team: Thursday 19 January 12:00
 
 # More information
 
 - [Random Forest Classification: R versus Python!](http://blog.yhathq.com/posts/comparing-random-forests-in-python-and-r.html)
-
-- https://rpubs.com/about/getting-started
-- https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown
+- [RPubs - how to publish your R scripts online](https://rpubs.com/about/getting-started)
+- [How to use R Markdown in RStudio](https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown)
 - [All the Rstudio documentation](https://support.rstudio.com/hc/en-us/categories/200035113-Documentation)
