@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
-  <meta name="author" content="Ben Devries, Jan Verbesselt, Loïc Dutrieux, Dainius Masiliūnas" />
+  <meta name="author" content="Ben Devries, Jan Verbesselt, Loïc Dutrieux, Dainius Masiliūnas, Astrid Bos" />
   <title></title>
   <style type="text/css">code{white-space: pre;}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -882,7 +882,7 @@ Advanced Raster Analysis
 <li>publish a documented report using R</li>
 <li>carry out a supervised and unsupervised classification on a series of raster layers</li>
 <li>construct a raster sieve using the <code>clump()</code> function</li>
-<li>deal with thematic (catergorical maps)</li>
+<li>deal with thematic (categorical maps)</li>
 </ul>
 <h1 id="creating-documented-reports">Creating documented reports</h1>
 <p>A great way to avoid clicking and copy pasting is to create a script that combines text (explanation of your script, introduction, or something else) and a R script and creates a report as an html file.</p>
@@ -961,7 +961,7 @@ Landsat 7 ETM+ bands
 </div>
 </div>
 </div>
-<p>Part of a landsat scene, including bands 2-4 are included in the data provided here. These data have been processed using the <a href="http://ledapsweb.nascom.nasa.gov/">LEDAPS framework</a>, so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).</p>
+<p>Part of a landsat scene, including bands 2-4 are included in the data provided here. These data have been processed using the <a href="http://dx.doi.org/10.3334/ORNLDAAC/1080">LEDAPS framework</a>, so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).</p>
 <p>We will begin exploring these data simply by downloading and visualizing them:</p>
 <p>To download the data you can clone the Github repository (https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis.git) to your local computer. All the required datasets are located within the <em>data</em> folder.</p>
 <div class="row">
@@ -1302,6 +1302,8 @@ classes <- rasterize(trainingPoly, ndvi, field='Code')</code></pre>
 <div class="row">
 
 </div>
+<p>You might get warnings like <code>In '[&lt;-'('*tmp*', cnt, value = p@polygons[[i]]@Polygons[[j]]) :  implicit list embedding of S4 objects is deprecated</code>. You can ignore these for now.</p>
+<strong>Note</strong>: there is a handy <code>progress=&quot;text&quot;</code> argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the<code>rasterize()</code> command above.
 <div class="row">
 <button class="source R toggle btn btn-xs btn-primary">
 <span class="glyphicon glyphicon-chevron-down"></span> R source
@@ -1320,7 +1322,6 @@ legend("topright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="whi
 </div>
 </div>
 </div>
-<p><strong>Note</strong>: there is a handy <code>progress=&quot;text&quot;</code> argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the<code>rasterize()</code> command above.</p>
 <p>Our goal in preprocessing these data is to have a table of values representing all layers (covariates) with <em>known</em> values/classes. To do this, we will first need to create a version of our <code>RasterBrick</code> only representing the training pixels. Here the <code>mask()</code> function from the raster package will be very useful.</p>
 <div class="row">
 <button class="source R toggle btn btn-xs btn-primary">
@@ -1915,16 +1916,18 @@ df <- as.data.frame(getValues(alldata))</code></pre>
 <li><a href="http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination">link</a></li>
 <li><p><a href="http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output">also here</a></p></li>
 <li>Plot the predicted tree cover raster and compare with the original VCF raster.</li>
-<li>Compute the RMSE between your predicted and the actual tree cover values (<a href="https://www.kaggle.com/wiki/RootMeanSquaredError">hint</a>)</li>
+<li>Compute the RMSE between your predicted and the actual tree cover values (<a href="http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r">hint</a>)</li>
 <li><p>Are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the Random Forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. <em>Hint</em> - see <code>?zonal()</code>.</p></li>
 </ul>
 <h2 id="submission">Submission</h2>
-<p>Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center. Deadline: Friday 10:30</p>
+<p>Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.</p>
+<p>Deadline: <strong>Thursday 19 January 11:00</strong></p>
+<p>Deadline sending feedback to other team: Thursday 19 January 12:00</p>
 <h1 id="more-information">More information</h1>
 <ul>
-<li><p><a href="http://blog.yhathq.com/posts/comparing-random-forests-in-python-and-r.html">Random Forest Classification: R versus Python!</a></p></li>
-<li>https://rpubs.com/about/getting-started</li>
-<li>https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown</li>
+<li><a href="http://blog.yhathq.com/posts/comparing-random-forests-in-python-and-r.html">Random Forest Classification: R versus Python!</a></li>
+<li><a href="https://rpubs.com/about/getting-started">RPubs - how to publish your R scripts online</a></li>
+<li><a href="https://support.rstudio.com/hc/en-us/articles/200552086-Using-R-Markdown">How to use R Markdown in RStudio</a></li>
 <li><a href="https://support.rstudio.com/hc/en-us/categories/200035113-Documentation">All the Rstudio documentation</a>
 </div>
 </div>
