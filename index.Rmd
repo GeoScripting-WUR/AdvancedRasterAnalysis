@@ -49,6 +49,8 @@ img <- readPNG("figs//DefaultOutput_Format.png")
 grid.raster(img)
 ```
 
+In the white parts of the R Markdown you can type anything (such as text or titles), which will not be run as a script. In the grey boxes you can type your code. Running the code can be done with the play button ("run curent chunk") on the right top side of the grey box or by clicking in the RMD you can use the shortcut ctrl + shift + enter to run the whole code chunk. This combination of text and code in R Markdown is very user friendly and makes it easy to make documents with nice visualizations or nicely documented code.
+
 * Click the Knit HTML button in the doc toolbar to preview your document.
 
 ```{r, echo=FALSE, fig.align='center'}
@@ -86,7 +88,7 @@ However, this will create a Markdown (.md) file, and not an HTML file. For creat
 render('your-file.Rmd', 'knitrBootstrap::bootstrap_document')
 ```
 
-The resulting HTML file then has to be uploaded to the website manually, or via git.
+Today you should exercise with the tutorial to work in R Markdown and for the exercise you have to create a html with the R Markdown file. The resulting HTML file then has to be uploaded to the website manually, or via git.
 
 # Advanced Raster Analysis
 
@@ -147,7 +149,7 @@ par(mfrow = c(1, 1)) # reset plotting window
 hist(gewata, xlim = c(0, 5000), ylim = c(0, 750000), breaks = seq(0, 5000, by = 100))
 ```
 
-Note that the values of these bands have been rescaled by a factor of 10000. This is done for file storage considerations. For example, a value of 0.5643 stored as a float takes up more disk space than a value of 5643 stored as an integer. If you prefer reflectance values in their original scale (from 0 to 1), this can easily be done using raster algebra or `calc()`.
+Note that the values of these bands have been rescaled by a factor of 10,000. This is done for file storage considerations. For example, a value of 0.5643 stored as a float takes up more disk space than a value of 5,643 stored as an integer. If you prefer reflectance values in their original scale (from 0 to 1), this can easily be done using raster algebra or `calc()`.
 
 A scatterplot matrix can be helpful in exploring relationships between raster layers. This can be done with the `pairs()` function of the raster package, which (like `hist()`) is a wrapper for the same function found in the `graphics` packages.
 
@@ -429,7 +431,9 @@ First, the mean decrease in accuracy indicates the amount by which the classific
 
 In this case, it seems that Gewata bands 3 and 4 have the highest impact on accuracy, while bands 3 and 2 score highest with the Gini impurity criterion. For especially large datasets, it may be helpful to know this information, and leave out less important variables for subsequent runs of the `randomForest()` function.
 
-> **Question 2**: Since the VCF layer included NAs (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate Random Forest model as above, but excluding this layer. What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What effect does leaving this variable out have on the processing time (hint: use `system.time()`)?
+Since the VCF layer included NAs (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate Random Forest model as above, but excluding this layer.
+
+> **Question 2**:  What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What effect does leaving this variable out have on the processing time (hint: use `system.time()`)?
 
 Now we can apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `raster` package to predict class values based on the random forest model we have just constructed. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `randomForest()` function we applied earlier.
 
@@ -543,9 +547,9 @@ plot(classes, legend=FALSE, col=c("dark green", "orange", "light blue"))
 
 These classes are much more difficult to interpret than those resulting from the random forest classification. We can see from the figure above that there is particularly high confusion between (what we might assume to be) the cropland and wetland classes. Clearly, with a good training dataset, a **supervised classification** can provide a reasonably accurate land cover classification. 
 
-However, unsupervised classification methods like k-means are useful for study areas for which little to no *a priori* data exist.
+However, unsupervised classification methods like K-means are useful for study areas for which little to no *a priori* data exist.
 
-> **Question 3**: Assuming there are no training data available, is there a way we could improve the k-means classification performed in this example? Which one is computationally faster between Random Forest and k-means (hint: try the `system.time()` function)?
+> **Question 3**: Assuming there are no training data available, is there a way we could improve the K-means classification performed in this example? Which of the two methods, randomforest and K-means, is computationally faster (hint: try the `system.time()` function)?
 
 ## Applying a raster sieve by clumping 
 
@@ -616,6 +620,9 @@ par(opar) # reset plotting window
 We have successfully removed all *island* pixels from the forest mask using the `clump()` function. We can adjust our sieve criteria to only directly adjacent (NESW) neighbours: the so-called *Rook's Case*. To accomplish this, simply repeat the code above, but supply the argument `directions=4` when calling `clump()`.
 
 ```{r, eval=FALSE, echo=FALSE, results='hide', include=FALSE}
+## Install igraph package if not installed
+if (!require("igraph")) install.packages("igraph")
+
 ## Group raster cells into clumps based on the Queen's Case
 ?clump
 forestclumps <- clump(formask, directions=4)
