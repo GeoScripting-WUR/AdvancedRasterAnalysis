@@ -716,7 +716,7 @@ The VCF Tree Cover product that we used in the random forest classification is a
 
 Create a model object using `lm()` using Landsat band reflectance values as predictors for tree cover (VCF). Using the resulting `model` object, predict VCF values for the Gewata area.
 
-The remaining Landsat bands for the Gewata area are available in the data folder of this lesson's repository:
+The remaining Landsat bands for the Gewata area are available as a [zip file](https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/GewataBands.zip) from the data folder of this lesson's repository:
 
 ```{r, results='hide', eval=FALSE}
 load("data/GewataB1.rda")
