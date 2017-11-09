@@ -4,11 +4,14 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   knitrBootstrap::bootstrap_document:
     title: "Advanced Raster Analysis"
-    theme: cosmo
+    theme: "simplex"
+    highlight: Tomorrow Night Bright
     menu: FALSE
+    theme.chooser: TRUE
+    highlight.chooser: TRUE
 ---
 
-# [WUR Geoscripting](https://geoscripting-wur.github.io/) ![WUR logo](http://www.wageningenur.nl/upload/f9a0b5f2-15c5-4b84-9e14-20ef02f5e265_wur-logo.png)
+# [WUR Geoscripting](https://geoscripting-wur.github.io/) <img src="http://www.wur.nl/upload/b43b7095-e452-482a-8969-fed9a50393a8_WUR_RGB_standard.png" alt="WUR logo" style="height: 35px;"/>
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
@@ -705,7 +708,7 @@ We learned about:
     - clump and sieve connected cells within a raster
     - deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.
 
-# Excercise of today
+# Excercise of today: Lesson 09
 
 ## Description of the excercise
 Today we learned about how a `model` object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of `model` objects than what is returned by `randomForest()`. The most basic `model` object is a product of a linear regression returned by `lm()`.
@@ -740,7 +743,7 @@ df <- as.data.frame(getValues(alldata))
 ```
 
 > Now build a `lm()` model in the same way as you build the randomForest model in 
- [yesterday's lesson](http://geoscripting-wur.github.io/VectorRaster/)
+ [VectorRaster lesson](http://geoscripting-wur.github.io/VectorRaster/)
 
 See here for more info about `summary()` of the `lm` model: 
 
@@ -751,13 +754,9 @@ See here for more info about `summary()` of the `lm` model:
 - Compute the RMSE between your predicted and the actual tree cover values ([hint](http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r))
 - Are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the Random Forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
 
-## Submission
+## Submission: Lesson 09
 
-Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.
-
-Deadline: **Thursday 19 January 11:00**
-
-Deadline sending feedback to other team: Thursday 19 January 12:00
+Publish a documented report to RPubs by using RMarkdown (.rmd file), copy paste the link to RPubs in your GitLab project and upload your .rmd to GitLab.
 
 # More information
 

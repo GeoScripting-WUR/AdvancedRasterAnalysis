@@ -869,7 +869,7 @@ Advanced Raster Analysis
 <div class="container">
 <div class="row row-offcanvas row-offcanvas-right">
 <div class="contents col-xs-12 col-md-10">
-<h1 id="wur-geoscripting-wur-logo"><a href="https://geoscripting-wur.github.io/">WUR Geoscripting</a> <img src="http://www.wageningenur.nl/upload/f9a0b5f2-15c5-4b84-9e14-20ef02f5e265_wur-logo.png" alt="WUR logo" /></h1>
+<h1 id="wur-geoscripting"><a href="https://geoscripting-wur.github.io/">WUR Geoscripting</a> <img src="http://www.wur.nl/upload/b43b7095-e452-482a-8969-fed9a50393a8_WUR_RGB_standard.png" alt="WUR logo" style="height: 35px;"/></h1>
 <div class="row">
 
 </div>
@@ -1878,7 +1878,7 @@ plot(forest, col="dark green", legend=FALSE)</code></pre>
 <li>deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.</li>
 </ul></li>
 </ul>
-<h1 id="excercise-of-today">Excercise of today</h1>
+<h1 id="excercise-of-today-lesson-09">Excercise of today: Lesson 09</h1>
 <h2 id="description-of-the-excercise">Description of the excercise</h2>
 <p>Today we learned about how a <code>model</code> object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of <code>model</code> objects than what is returned by <code>randomForest()</code>. The most basic <code>model</code> object is a product of a linear regression returned by <code>lm()</code>.</p>
 <p>The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based on several input data sources. Using Landsat band reflectance from one point in time, how well can we predict tree cover, using the existing VCF product as a response variable?</p>
@@ -1911,7 +1911,7 @@ names(alldata) <- c("band1", "band2", "band3", "band4", "band5", "band7", "VCF")
 df <- as.data.frame(getValues(alldata))</code></pre>
 </div>
 <blockquote>
-<p>Now build a <code>lm()</code> model in the same way as you build the randomForest model in <a href="http://geoscripting-wur.github.io/VectorRaster/">yesterday's lesson</a></p>
+<p>Now build a <code>lm()</code> model in the same way as you build the randomForest model in <a href="http://geoscripting-wur.github.io/VectorRaster/">VectorRaster lesson</a></p>
 </blockquote>
 <p>See here for more info about <code>summary()</code> of the <code>lm</code> model:</p>
 <ul>
@@ -1921,10 +1921,8 @@ df <- as.data.frame(getValues(alldata))</code></pre>
 <li>Compute the RMSE between your predicted and the actual tree cover values (<a href="http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r">hint</a>)</li>
 <li><p>Are the differences between the predicted and actual tree cover the same for all of the 3 classes we used for the Random Forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. <em>Hint</em> - see <code>?zonal()</code>.</p></li>
 </ul>
-<h2 id="submission">Submission</h2>
-<p>Publish a documented report to RPubs and copy paste the link together with the link to your project GitHub repository for this assigment in our Blackboard Script review center.</p>
-<p>Deadline: <strong>Thursday 19 January 11:00</strong></p>
-<p>Deadline sending feedback to other team: Thursday 19 January 12:00</p>
+<h2 id="submission-lesson-09">Submission: Lesson 09</h2>
+<p>Publish a documented report to RPubs by using RMarkdown (.rmd file), copy paste the link to RPubs in your GitLab project and upload your .rmd to GitLab.</p>
 <h1 id="more-information">More information</h1>
 <ul>
 <li><a href="http://blog.yhathq.com/posts/comparing-random-forests-in-python-and-r.html">Random Forest Classification: R versus Python!</a></li>
@@ -1944,7 +1942,7 @@ Styled with <a href="https://github.com/jimhester/knitrBootstrap">knitrBootstrap
 </p>
 </div>
 </div>
-<link rel="stylesheet" id="theme" href="https://netdna.bootstrapcdn.com/bootswatch/3.0.0/cosmo/bootstrap.min.css" media="screen"></link><link rel="stylesheet" id="highlight" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/7.3/styles/default.min.css" media="screen"></link>
+<link rel="stylesheet" id="theme" href="https://netdna.bootstrapcdn.com/bootswatch/3.0.0/simplex/bootstrap.min.css" media="screen"></link><link rel="stylesheet" id="highlight" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/7.3/styles/tomorrow-night-bright.min.css" media="screen"></link>
 </div></li>
 </ul>
 </body>
