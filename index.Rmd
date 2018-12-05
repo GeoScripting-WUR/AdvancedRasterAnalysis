@@ -39,12 +39,7 @@ Being able to:
 
 Since being released to the public, the Landsat data archive has become an invaluable tool for environmental monitoring. With a historical archive reaching back to the 1970's, the release of these data has resulted in a spur of time series based methods. In this tutorial, we will work with time series data from the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor. Landsat scenes are delivered via the USGS as a number of image layers representing the different bands captured by the sensors. In the case of the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor, the bands are shown in the figure below. Using different combination of these bands can be useful in describing land features and change processes.
 
-```{r, echo=FALSE, fig.cap='Landsat 7 ETM+ bands', fig.width=10}
-library(png)
-library(grid)
-img <- readPNG("figs//landsat_bands.png")
-grid.raster(img)
-```
+![Landsat 7 ETM+ bands](figs/landsat_bands.jpg)
 
 Part of a landsat scene, including bands 2-4 are included in the data provided here. 
 These data have been processed using the [LEDAPS framework](http://dx.doi.org/10.3334/ORNLDAAC/1080), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
@@ -53,7 +48,7 @@ We will begin exploring these data simply by downloading and visualizing them:
 
 To download the data you can clone the Github repository (https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis.git) to your local computer. All the required datasets are located within the *data* folder.
 
-```{r, message=FALSE, include=TRUE, results='hide'}
+```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
 ## Libraries
 library(raster)
 ## Load data
@@ -76,7 +71,7 @@ summary(GewataB2)
 ## Put the 3 bands into a RasterBrick object to summarize together
 gewata <- brick(GewataB2, GewataB3, GewataB4)
 # 3 histograms in one window (automatic, if a RasterBrick is supplied)
-hist(gewata)
+hist(gewata, maxpixels=1000)
 ```
 
 When we plot the histogram of the `RasterBrick`, the scales of the axes and the bin sizes are not equivalent, which could be problematic. This can be solved by adjusting these paramters in `hist()`. The raster `hist()` function inherits arguments from the function of the same name from the `graphics` package. To view additional arguments, type:
@@ -560,7 +555,9 @@ We learned about:
 ## Description of the excercise
 Today we learned about how a `model` object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of `model` objects than what is returned by `randomForest()`. The most basic `model` object is a product of a linear regression returned by `lm()`.
 
-The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based on several input data sources. Using Landsat band reflectance from **one** point in time, how well can we predict tree cover, using the existing VCF product as a response variable?
+The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based on several input data sources. 
+
+**Question**: Using Landsat band reflectance from **one** point in time, how well can we predict tree cover, using the existing VCF product as a response variable?
 
 ## Methodology (tasks)
 
