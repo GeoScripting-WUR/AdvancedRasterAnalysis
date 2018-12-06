@@ -619,13 +619,12 @@ See here for more info about `summary()` of the `lm` model:
 **Tasks**
 
 - Produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)? Based on the correlation, select suitable variables for the regression model. 
-- Create an `lm()` model and show a summary (e.g. using `summary()`) of the model object you created. Which predictors (bands) are probably most important in predicting tree cover?
 - Plot the predicted tree cover raster and compare with the original VCF raster.
 - Compute the RMSE between your predicted and the original tree cover values ([hint](http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r))
 
 **Bonus question:**
 
-- Are the differences between the predicted and original tree cover the same for all of the 3 classes we used for the Random Forest classfication? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
+- Are the differences between the predicted and original tree cover the same for all of the 3 classes we used for the Random Forest classification? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
 
 ## Submission: Lesson 09
 
