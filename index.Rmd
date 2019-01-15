@@ -20,10 +20,16 @@ opts_chunk$set(fig.width=5, fig.align='center', fig.height=5, dpi=72)
 
 # Today's items
 
-## ToDo in the morning
 
-Go through the whole lesson and try to answer the questions below. 
-We will address the questions in the lesson and discuss if needed.
+Good morning! 
+Here is what you will do today:
+
+Time  | Activity
+------------- | -------------
+Until 11:00 |  	Review answer of the other team for yesterday’s exercise 
+Morning  |  Self-study: go through the following tutorial
+14:00 to 14:40  | Presentation and discussion
+Rest of the afternoon | Do/finalise the exercise.
 
 ## Learning outcomes of today:
 
@@ -44,13 +50,16 @@ Since being released to the public, the Landsat data archive has become an inval
 Part of a landsat scene, including bands 2-4 are included in the data provided here. 
 These data have been processed using the [LEDAPS framework](http://dx.doi.org/10.3334/ORNLDAAC/1080), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
 
-We will begin exploring these data simply by downloading and visualizing them:
-
-To download the data you can clone the Github repository (https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis.git) to your local computer. All the required datasets are located within the *data* folder.
+We will begin exploring these data simply by downloading and visualizing them. The data is the same Gewata data from Lesson 5, but in this case all the bands are saved as a separate file. We also have a VCF (vegetation contintious field) data and training polygons which will be useful in this lesson. 
 
 ```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
 ## Libraries
 library(raster)
+## Download, unzip and load the data
+download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/data.zip', destfile ='data.zip', method = 'auto')
+
+
+unzip('data.zip', exdir="data")
 ## Load data
 load("data/GewataB2.rda")
 load("data/GewataB3.rda")
@@ -550,7 +559,7 @@ We learned about:
     - clump and sieve connected cells within a raster
     - deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.
 
-# Excercise of today: Lesson 09
+# Excercise 09 : Advanced Raster Analysis
 
 ## Description of the excercise
 Today we learned about how a `model` object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of `model` objects than what is returned by `randomForest()`. The most basic `model` object is a product of a linear regression returned by `lm()`.
@@ -559,12 +568,24 @@ The VCF Tree Cover product that we used in the random forest classification is a
 
 **Question**: Using Landsat band reflectance from **one** point in time, how well can we predict tree cover, using the existing VCF product as a response variable?
 
-## Methodology (tasks)
 
-Create a model object using `lm()` using Landsat band reflectance values as predictors for tree cover (VCF). Using the resulting `model` object, predict VCF values for the Gewata area.
+To answer this question:
+Create a model object using `lm()` using Landsat band reflectance values as predictors for tree cover (VCF). You can build a `lm()` model in the same way as you build the randomForest model in 
+ [VectorRaster lesson](http://geoscripting-wur.github.io/VectorRaster/).Using the resulting `model` object, predict VCF values for the Gewata area.
 
-The remaining Landsat bands for the Gewata area are available as a [zip file](https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/GewataBands.zip) from the data folder of this lesson's repository:
+See here for more info about `summary()` of the `lm` model: 
 
+- [link](http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination)
+- [also here](http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output)
+
+
+
+## Link to data
+The remaining Landsat bands for the Gewata area are in the data folder. You can also download the data from this [zip file](https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/GewataBands.zip).
+
+## Hints
+
+**Hint1: loading the data **
 ```{r, results='hide', eval=FALSE}
 load("data/GewataB1.rda")
 load("data/GewataB5.rda")
@@ -575,9 +596,7 @@ alldata <- brick(GewataB1, GewataB2, GewataB3, GewataB4, GewataB5, GewataB7, vcf
 names(alldata) <- c("band1", "band2", "band3", "band4", "band5", "band7", "VCF")
 ```
 
-
-
-Hint:
+**Hint2: Selecting training sample points **
 
 ```{r, eval=FALSE}
 ## Find borders of Gewate region
@@ -608,27 +627,25 @@ plot(gwt, main="The randomly selected sampling points")
 plot(sRandomGWT, add = TRUE, col = "red")
 ```
 
-> Now build a `lm()` model in the same way as you build the randomForest model in 
- [VectorRaster lesson](http://geoscripting-wur.github.io/VectorRaster/)
+## Assessment
 
-See here for more info about `summary()` of the `lm` model: 
+The general rubrics will be used for the assessment of your script. These can be found on the BlackBoard. The three specific tasks in the rubrics your script will be assessed on are:
 
-- [link](http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination)
-- [also here](http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output)
+**Task1 ** Produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)? Based on the correlation, select suitable variables for the regression model. 
 
-**Tasks**
+**Task2 ** Compare the predicted tree cover raster with the original VCF raster by  (1) plotting them and (2) by making a difference raster and plotting it 
 
-- Produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)? Based on the correlation, select suitable variables for the regression model. 
-- Plot the predicted tree cover raster and compare with the original VCF raster.
-- Compute the RMSE between your predicted and the original tree cover values ([hint](http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r))
+**Task3 ** Compute the RMSE between your predicted and the original tree cover values ([hint](http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r))
 
-**Bonus question:**
+**Bonus: ** You can earn the bonus point if you answer the following question: 
 
 - Are the differences between the predicted and original tree cover the same for all of the 3 classes we used for the Random Forest classification? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
 
-## Submission: Lesson 09
+## Submission
 
-Upload your well structured project to a GitLab repository.
+Make sure your script is clear and reproducible. Make a new GitLab project and upload the script there according to the guidelines on BlackBoard. Review the script of another team (see the random team selector Shiny app) tomorrow morning and add an issue t their project with your feedback.
+Do not forget to add your teamname, members and date at the top of your script.
+
 
 # More information
 
