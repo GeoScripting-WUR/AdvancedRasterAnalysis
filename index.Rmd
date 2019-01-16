@@ -56,10 +56,12 @@ We will begin exploring these data simply by downloading and visualizing them. T
 ## Libraries
 library(raster)
 ## Download, unzip and load the data
-download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/data.zip', destfile ='data.zip', method = 'auto')
+# data folder must be created in your project directory
+ifelse(!dir.exists(file.path("data")), dir.create(file.path("data")), FALSE)
+download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/data.zip', destfile ='data/data.zip', method = 'auto')
 
 
-unzip('data.zip', exdir="data")
+unzip('data/data.zip', exdir="data")
 ## Load data
 load("data/GewataB2.rda")
 load("data/GewataB3.rda")
@@ -559,7 +561,7 @@ We learned about:
     - clump and sieve connected cells within a raster
     - deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.
 
-# Excercise 09 : Advanced Raster Analysis
+# Exercise 09 : Advanced Raster Analysis
 
 ## Description of the excercise
 Today we learned about how a `model` object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of `model` objects than what is returned by `randomForest()`. The most basic `model` object is a product of a linear regression returned by `lm()`.

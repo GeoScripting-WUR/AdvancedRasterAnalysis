@@ -921,10 +921,12 @@ Advanced Raster Analysis
 <pre style=""><code class="source r">## Libraries
 library(raster)
 ## Download, unzip and load the data
-download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/data.zip', destfile ='data.zip', method = 'auto')
+# data folder must be created in your project directory
+ifelse(!dir.exists(file.path("data")), dir.create(file.path("data")), FALSE)
+download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/data.zip', destfile ='data/data.zip', method = 'auto')
 
 
-unzip('data.zip', exdir="data")
+unzip('data/data.zip', exdir="data")
 ## Load data
 load("data/GewataB2.rda")
 load("data/GewataB3.rda")
@@ -1721,7 +1723,7 @@ plot(forest, col="dark green", legend=FALSE)</code></pre>
 <li>deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.</li>
 </ul></li>
 </ul>
-<h1 id="excercise-09-advanced-raster-analysis">Excercise 09 : Advanced Raster Analysis</h1>
+<h1 id="exercise-09-advanced-raster-analysis">Exercise 09 : Advanced Raster Analysis</h1>
 <h2 id="description-of-the-excercise">Description of the excercise</h2>
 <p>Today we learned about how a <code>model</code> object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of <code>model</code> objects than what is returned by <code>randomForest()</code>. The most basic <code>model</code> object is a product of a linear regression returned by <code>lm()</code>.</p>
 <p>The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based on several input data sources.</p>
