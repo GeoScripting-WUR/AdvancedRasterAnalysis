@@ -1,9 +1,9 @@
 ---
 author: "Ben Devries, Jan Verbesselt, Loïc Dutrieux, Dainius Masiliūnas, Astrid Bos, Nandika Tsendbazar"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
+pagetitle: "Advanced Raster Analysis"
 output:
   knitrBootstrap::bootstrap_document:
-    title: "Advanced Raster Analysis"
     theme: "simplex"
     highlight: Tomorrow Night Bright
     menu: FALSE
@@ -11,13 +11,13 @@ output:
     highlight.chooser: TRUE
 ---
 
-# [WUR Geoscripting](https://geoscripting-wur.github.io/) <img src="http://www.wur.nl/upload/b43b7095-e452-482a-8969-fed9a50393a8_WUR_RGB_standard.png" alt="WUR logo" style="height: 35px;"/>
+# [WUR Geoscripting](https://geoscripting-wur.github.io/) <img src="https://www.wur.nl/upload/5e55a1d9-47c3-4149-9384-26d5147ee2d7_WUR_RGB_standard.png" alt="WUR logo" style="height: 35px;"/>
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
 opts_chunk$set(fig.width=5, fig.align='center', fig.height=5, dpi=72)
 ```
-
+<!--
 # Today's items
 
 
@@ -30,7 +30,7 @@ Until 11:00 |  	Review answer of the other team for yesterday’s exercise
 Morning  |  Self-study: go through the following tutorial
 14:00 to 14:40  | Presentation and discussion
 Rest of the afternoon | Do/finalise the exercise.
-
+-->
 ## Learning outcomes of today:
 
 Being able to:
@@ -561,6 +561,8 @@ We learned about:
     - clump and sieve connected cells within a raster
     - deal with thematic (i.e. categorical raster data) by assigning raster attribute tables.
 
+<!--
+
 # Exercise 09 : Advanced Raster Analysis
 
 ## Description of the excercise
@@ -647,7 +649,7 @@ The general rubrics will be used for the assessment of your script. These can be
 
 Make sure your script is clear and reproducible. Make a new GitLab project and upload the script there according to the guidelines on BlackBoard. Review the script of another team (see the random team selector Shiny app) tomorrow morning and add an issue t their project with your feedback.
 Do not forget to add your teamname, members and date at the top of your script.
-
+-->
 
 # More information
 
