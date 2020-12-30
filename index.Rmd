@@ -21,16 +21,19 @@ opts_chunk$set(fig.width=5, fig.align='center', fig.height=5, dpi=72)
 # Today's items
 
 
-Good morning! 
+Good morning!
 Here is what you will do today:
 
 Time  | Activity
 ------------- | -------------
-Until 11:00 |  	Review answer of the other team for yesterday’s exercise 
+Until 11:00 |  	Review answer of the other team for yesterday’s exercise
 Morning  |  Self-study: go through the following tutorial
 14:00 to 14:40  | Presentation and discussion
 Rest of the afternoon | Do/finalise the exercise.
 -->
+
+# Week 2, Lesson 7: Advanced Raster Analysis
+
 ## Learning outcomes of today:
 
 Being able to:
@@ -47,10 +50,10 @@ Since being released to the public, the Landsat data archive has become an inval
 
 ![Landsat 7 ETM+ bands](figs/landsat_bands.jpg)
 
-Part of a landsat scene, including bands 2-4 are included in the data provided here. 
+Part of a landsat scene, including bands 2-4 are included in the data provided here.
 These data have been processed using the [LEDAPS framework](http://dx.doi.org/10.3334/ORNLDAAC/1080), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
 
-We will begin exploring these data simply by downloading and visualizing them. The data is the same Gewata data from Lesson 5, but in this case all the bands are saved as a separate file. We also have a VCF (vegetation contintious field) data and training polygons which will be useful in this lesson. 
+We will begin exploring these data simply by downloading and visualizing them. The data is the same Gewata data from Lesson 5, but in this case all the bands are saved as a separate file. We also have a VCF (vegetation contintious field) data and training polygons which will be useful in this lesson.
 
 ```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
 ## Libraries
@@ -108,7 +111,7 @@ pairs(gewata)
 
 Note that both `hist()` and `pairs()` compute histograms and scatterplots based on a random sample of raster pixels. The size of this sample can be changed with the argument `maxpixels` in either function.
 
-Calling `pairs()` on a `RasterBrick` reveals potential correlations between the layers themselves. In the case of bands 2-4 of the gewata subset, we can see that band 2 and 3 (in the visual part of the EM spectrum) are highly correlated, while band 4 contains significant non-redundant information. 
+Calling `pairs()` on a `RasterBrick` reveals potential correlations between the layers themselves. In the case of bands 2-4 of the gewata subset, we can see that band 2 and 3 (in the visual part of the EM spectrum) are highly correlated, while band 4 contains significant non-redundant information.
 
 > **Question 1**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
 
@@ -134,7 +137,7 @@ One of the most important tasks in analysis of remote sensing image analysis is 
 
 The Random Forest classification algorithm is an ensemble learning method that is used for both classification and regression. In our case, we will use the method for classification purposes. Here, the random forest method takes random subsets from a training dataset and constructs classification trees using each of these subsets. Trees consist of *branches* and *leaves*.
 
-Branches represent nodes of the decision trees, which are often thresholds defined for the measured (known) variables in the dataset. Leaves are the class labels assigned at the termini of the trees. Sampling many subsets at random will result in many trees being built. Classes are then assigned based on classes assigned by all of these trees based on a majority rule, as if each class assigned by a decision tree were considered to be a *vote*. 
+Branches represent nodes of the decision trees, which are often thresholds defined for the measured (known) variables in the dataset. Leaves are the class labels assigned at the termini of the trees. Sampling many subsets at random will result in many trees being built. Classes are then assigned based on classes assigned by all of these trees based on a majority rule, as if each class assigned by a decision tree were considered to be a *vote*.
 
 Figure below gives a simple demonstration of how the random forest method works in principle. For an introduction to the random forest algorithm, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
 
@@ -212,7 +215,7 @@ trainingPoly@data
 # The 'Class' column is actually an ordered factor type
 trainingPoly@data$Class
 str(trainingPoly@data$Class)
-# We can convert to integer by using the as.numeric() function, 
+# We can convert to integer by using the as.numeric() function,
 # which takes the factor levels
 trainingPoly@data$Code <- as.numeric(trainingPoly@data$Class)
 trainingPoly@data
@@ -300,7 +303,7 @@ hist(val_wetland$NDVI, main = "wetland", xlab = "NDVI", xlim = c(0, 1), ylim = c
 par(mfrow = c(1, 1))
 ```
 
-> Other covariates such as VCF can also be plotted like above. 
+> Other covariates such as VCF can also be plotted like above.
 
 ```{r, eval=TRUE, fig.width=10, fig.height=6}
 ## 3. Bands 3 and 4 (scatterplots)
@@ -364,7 +367,7 @@ varImpPlot(modelRF)
 ```
 The figure above shows the variable importance plots for a Random Forest model showing the mean decrease in accuracy (left) and the decrease in Gini Impurity Coefficient (right) for each variable.
 
-These two plots give two different reports on variable importance (see `?importance()`). 
+These two plots give two different reports on variable importance (see `?importance()`).
 
 First, the mean decrease in accuracy indicates the amount by which the classification accuracy decreased based on the `OOB` assessment. Second, the Gini impurity coefficient gives a measure of class homogeneity. More specifically, the decrease in the Gini impurity coefficient when including a particular variable is shown in the plot. From [Wikipedia](http://en.wikipedia.org/wiki/Decision_tree_learning): "Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it were randomly labeled according to the distribution of labels in the subset".
 
@@ -401,14 +404,14 @@ predLC <- predict(covs, model=modelRF, na.rm=TRUE)
 # recall: 1 = cropland, 2 = forest, 3 = wetland
 cols <- c("orange", "dark green", "light blue")
 plot(predLC, col=cols, legend=FALSE)
-legend("bottomright", 
-       legend=c("cropland", "forest", "wetland"), 
+legend("bottomright",
+       legend=c("cropland", "forest", "wetland"),
        fill=cols, bg="white")
 ```
 
 Note that the `predict()` function also takes arguments that can be passed to `writeRaster()` (eg. `filename = ""`, so it is a good idea to write to file as you perform this step (rather than keeping all output in memory).
 
-## Applying a raster sieve by clumping 
+## Applying a raster sieve by clumping
 
 Although the land cover raster resulted from the Random Forest has limited number of thematic classes, and we observed some confusion between wetland and cropland classes, it could be useful for constructing a forest mask (since that class performed quite well). To do so, we have to fuse (and remove) non-forest classes, and then clean up the remaining pixels by applying a sieve. We will make use of the `clump()` function (detecting patches of connected cells) in the raster package.
 
@@ -426,9 +429,9 @@ The forest mask here can be used to isolate forest pixels for further analysis. 
 
 For some applications, we may only be interested in larger forest areas. We may especially want to remove single forest pixels, as they may be a result of errors, or may not fit our definition of *forest*.
 
-In this section, we will construct 2 types of sieves to remove these types of pixels, following 2 definitions of *adjacency*. In the first approach, the so-called *Queen's Case*, neighbours in all 8 directions are considered to be adjacent. If any pixel cell has no neighbours in any of these 8 directions, we will remove that pixel by assigning an `NA` value. 
+In this section, we will construct 2 types of sieves to remove these types of pixels, following 2 definitions of *adjacency*. In the first approach, the so-called *Queen's Case*, neighbours in all 8 directions are considered to be adjacent. If any pixel cell has no neighbours in any of these 8 directions, we will remove that pixel by assigning an `NA` value.
 
-First, we will use the `clump()` function in the raster package to identify clumps of raster cells. 
+First, we will use the `clump()` function in the raster package to identify clumps of raster cells.
 This function arbitrarily assigns an ID to these clumps.
 
 ```{r, results='hide', fig.show='hide'}
@@ -498,7 +501,7 @@ plot(formaskSieve, ext=e, col="dark green", legend=FALSE)
 par(opar)
 ```
 
-We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask. 
+We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask.
 
 > **Question 3:** How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectares? Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
 
@@ -568,16 +571,16 @@ We learned about:
 ## Description of the excercise
 Today we learned about how a `model` object in R can be used to predict raster values. This is a good example of how we can use the strengths of R's statistical packages in a spatial context. Of course, there are many more types of `model` objects than what is returned by `randomForest()`. The most basic `model` object is a product of a linear regression returned by `lm()`.
 
-The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based on several input data sources. 
+The VCF Tree Cover product that we used in the random forest classification is a product of a spatial model of tree cover, based on several input data sources.
 
 **Question**: Using Landsat band reflectance from **one** point in time, how well can we predict tree cover, using the existing VCF product as a response variable?
 
 
 To answer this question:
-Create a model object using `lm()` using Landsat band reflectance values as predictors for tree cover (VCF). You can build a `lm()` model in the same way as you build the randomForest model in 
+Create a model object using `lm()` using Landsat band reflectance values as predictors for tree cover (VCF). You can build a `lm()` model in the same way as you build the randomForest model in
  [VectorRaster lesson](http://geoscripting-wur.github.io/VectorRaster/).Using the resulting `model` object, predict VCF values for the Gewata area.
 
-See here for more info about `summary()` of the `lm` model: 
+See here for more info about `summary()` of the `lm` model:
 
 - [link](http://www.r-tutor.com/elementary-statistics/simple-linear-regression/coefficient-determination)
 - [also here](http://stats.stackexchange.com/questions/5135/interpretation-of-rs-lm-output)
@@ -618,7 +621,7 @@ df <- as.data.frame(getValues(alldata))
 ## select random sample points (choose a size what you think is proper)
 ## and use as training data
 sRandomGWT <- sampleRandom(alldata, na.rm=TRUE, sp=TRUE, size = 1000)
-sRandomData <- data.frame(VCF = sRandomGWT@data[[7]], 
+sRandomData <- data.frame(VCF = sRandomGWT@data[[7]],
                           band1 = sRandomGWT@data[[1]],
                           band2 = sRandomGWT@data[[2]],
                           band3 = sRandomGWT@data[[3]],
@@ -635,13 +638,13 @@ plot(sRandomGWT, add = TRUE, col = "red")
 
 The general rubrics will be used for the assessment of your script. These can be found on the BlackBoard. The three specific tasks in the rubrics your script will be assessed on are:
 
-**Task1 ** Produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)? Based on the correlation, select suitable variables for the regression model. 
+**Task1 ** Produce one or more plots that demonstrate the relationship between the Landsat bands and the VCF tree cover. What can you conclude from this/these plot(s)? Based on the correlation, select suitable variables for the regression model.
 
-**Task2 ** Compare the predicted tree cover raster with the original VCF raster by  (1) plotting them and (2) by making a difference raster and plotting it 
+**Task2 ** Compare the predicted tree cover raster with the original VCF raster by  (1) plotting them and (2) by making a difference raster and plotting it
 
 **Task3 ** Compute the RMSE between your predicted and the original tree cover values ([hint](http://stackoverflow.com/questions/17703037/how-to-perform-rmse-in-r))
 
-**Bonus: ** You can earn the bonus point if you answer the following question: 
+**Bonus: ** You can earn the bonus point if you answer the following question:
 
 - Are the differences between the predicted and original tree cover the same for all of the 3 classes we used for the Random Forest classification? Using the training polygons from the random forest classification, calculate the RMSE separately for each of the classes and compare. *Hint* - see `?zonal()`.
 
