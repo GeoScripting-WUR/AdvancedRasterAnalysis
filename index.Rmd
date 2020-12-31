@@ -192,8 +192,8 @@ First, let's rescale the original reflectance values to their original scale. Th
 
 ```{r, eval=TRUE, fig.align='center', fig.show='hide'}
 gewata <- calc(gewata, fun=function(x) x / 10000)
-## Make a new RasterBrick of covariates by 'bricking' together the existing gewata brick and NDVI and VCF layers
-covs <- brick(c(gewata, ndvi, vcfGewata))
+## Make a new RasterStack of covariates by 'stacking' together the existing gewata brick and NDVI and VCF layers
+covs <- stack(gewata, ndvi, vcfGewata)
 plot(covs)
 ```
 
@@ -209,7 +209,9 @@ For this exercise, we will do a very simple classification for 2001 using three 
 
 ```{r, fig.align='center', fig.width=5}
 ## Load the training polygons as a simple features object
-trainingPoly <- st_read("data/trainingPoly.csv")
+trainingPoly <- readRDS("data/trainingPoly.rds")
+# Note that alternatively we could load a file that is not specific to R using st_read:
+#trainingPoly <- st_read("data/trainingPoly.csv")
 ## Superimpose training polygons onto NDVI plot
 plot(ndvi)
 plot(trainingPoly, col = 'transparent', border = '#000000', lwd = 2, add = TRUE)
@@ -269,15 +271,15 @@ covmasked <- mask(covs, classes)
 plot(covmasked)
 ## Combine this new brick with the classes layer to make our input training dataset
 names(classes) <- "class"
-trainingbrick <- brick(c(covmasked, classes))
-plot(trainingbrick)
+trainingstack <- addLayer(covmasked, classes)
+plot(trainingstack)
 ```
 
 Now we convert these data to a `data.frame` representing all training data. This data.frame will be used as an input into the RandomForest classification function. We will use `getValues()` to extract all of the values from the layers of the RasterBrick.
 
 ```{r, results='hide'}
 ## Extract all values into a matrix
-valuetable <- getValues(trainingbrick)
+valuetable <- getValues(trainingstack)
 ```
 
 If you print `valuetable` to the console, you will notice that a lot of the rows are filled with `NA`. This is because all raster cell values have been taken, include those with NA values. We can get rid of these rows by using the `na.omit()` function.
@@ -332,6 +334,10 @@ We can see from these distributions that these covariates may do well in classif
 #### Run Random Forest classificaiton
 We build the Random Forest model using the training data. For this, we will use the `randomForest` package in R. Using the `randomForest()` function, we will build a model based on a matrix of predictors or covariates (ie. the first 5 columns of valuetable) related to the response (the `class` column of valuetable).
 
+```{block, type="alert alert-info"}
+**Note**: the *randomForest* package is the reference implementation of Random Forest in R. However, it is very slow. For any work beyond such a simple example, you should use the *ranger* package, which is implemented in C++ with multithreading and thus is much faster.
+```
+
 ```{r, eval=FALSE}
 ## Construct a random forest model
 # Covariates (x) are found in columns 1 to 5 of valuetable
@@ -358,7 +364,11 @@ if(!file.exists("data/modelRF.rda")){
 }
 ```
 
-Since the random forest method involves the building and testing of many classification trees (the 'forest'), it is a computationally expensive step (and could take a lot of memory for especially large training datasets). When this step is finished, it would be a good idea to save the resulting object with the `save()` command. Any R object can be saved as an `.rda` file and reloaded into future sessions using `load()`.
+Since the random forest method involves the building and testing of many classification trees (the 'forest'), it is a computationally expensive step (and could take a lot of memory for especially large training datasets). When this step is finished, it would be a good idea to save the resulting object with the `saveRDS()` command. Any R object can be saved as an `.rds` file and reloaded into future sessions using `readRDS()`.
+
+```{block, type="alert alert-info"}
+**Note**: there is a similar functionality using the `save()` and `load()` commands, but those can save more than one object and don't tell you their names, you have to know them. That is why `saveRDS()`/`readRDS()` is preferred, but in this tutorial in a lot of cases `load` is still being used.
+```
 
 The resulting object from the `randomForest()` function is a specialized object of class `randomForest`, which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
 
