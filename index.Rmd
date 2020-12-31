@@ -50,14 +50,21 @@ Since being released to the public, the Landsat data archive has become an inval
 
 ![Landsat 7 ETM+ bands](figs/landsat_bands.jpg)
 
-Part of a landsat scene, including bands 2-4 are included in the data provided here.
+Part of a Landsat scene, including bands 2-4 are included in the data provided here.
 These data have been processed using the [LEDAPS framework](http://dx.doi.org/10.3334/ORNLDAAC/1080), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
 
-We will begin exploring these data simply by downloading and visualizing them. The data is the same Gewata data from Lesson 5, but in this case all the bands are saved as a separate file. We also have a VCF (vegetation contintious field) data and training polygons which will be useful in this lesson.
+We will begin exploring these data simply by downloading and visualizing them. The data is the same Gewata data from Lesson 5, but in this case all the bands are saved as a separate file. We also have a VCF (Vegetation Continuous Field) data and training polygons which will be useful in this lesson. We will be making use of the [RasterBrick](https://www.rdocumentation.org/packages/raster/versions/3.4-5/topics/brick) object.
 
 ```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
+# check for raster package and install if missing
+if(!"raster" %in% rownames(installed.packages())){install.packages("raster")}
+
+# check for sf package and install if missing
+if(!"sf" %in% rownames(installed.packages())){install.packages("sf")}
+
 ## Libraries
 library(raster)
+library(sf)
 ## Download, unzip and load the data
 # data folder must be created in your project directory
 ifelse(!dir.exists(file.path("data")), dir.create(file.path("data")), FALSE)
@@ -72,7 +79,7 @@ load("data/GewataB4.rda")
 
 ## Check out the attributes
 GewataB2
-## Some basic statistics using cellStats()
+## Some basic statistics using cellStats() from the raster package
 cellStats(GewataB2, stat=max)
 cellStats(GewataB2, stat=mean)
 # This is equivalent to:
@@ -101,7 +108,7 @@ par(mfrow = c(1, 1)) # reset plotting window
 hist(gewata, xlim = c(0, 5000), ylim = c(0, 750000), breaks = seq(0, 5000, by = 100))
 ```
 
-Note that the values of these bands have been rescaled by a factor of 10,000. This is done for file storage considerations. For example, a value of 0.5643 stored as a float takes up more disk space than a value of 5,643 stored as an integer. If you prefer reflectance values in their original scale (from 0 to 1), this can easily be done using raster algebra or `calc()`.
+Note that the values of these bands have been rescaled by a factor of 10,000. This is done for file storage considerations. For example, a value of 0.5643 stored as a float takes up more disk space than a value of 5643 stored as an integer. If you prefer reflectance values in their original scale (from 0 to 1), this can easily be done using raster algebra or `calc()`. We will do this later.
 
 A scatterplot matrix can be helpful in exploring relationships between raster layers. This can be done with the `pairs()` function of the raster package, which (like `hist()`) is a wrapper for the same function found in the `graphics` packages.
 
@@ -122,6 +129,7 @@ We observe a strong correlation between two of the Landsat bands of the gewata s
 In the previous lesson, we explored several ways to calculate NDVI, using direct raster algebra, `calc()` or `overlay()`. Since we will be using NDVI again later in this tutorial, let's calculate it again and store it in our workspace using `overlay()`.
 
 ```{r}
+par(mfrow = c(1, 1)) # reset plotting window
 ndvi <- overlay(GewataB4, GewataB3, fun=function(x,y){(x-y)/(x+y)})
 plot(ndvi)
 ```
@@ -130,16 +138,16 @@ Aside from the advantages of `calc()` and `overlay()` regarding memory usage, an
 
 ## Classifying raster data
 
-One of the most important tasks in analysis of remote sensing image analysis is image classification. In classifying the image, we take the information contained in the various bands (possibly including other synthetic bands such as NDVI or principal components). There are two approaches for image classification: supervised and unsubpervised. In this tutorial we will explore supervised classification based on Random Forest method.  
+One of the most important tasks in analysis of remote sensing image analysis is image classification. In classifying the image, we take the information contained in the various bands (possibly including other synthetic bands such as NDVI or principal components). There are two approaches for image classification: supervised and unsupervised. In this tutorial we will explore supervised classification based on the Random Forest method.  
 
 
 ### Supervised classification: Random Forest
 
-The Random Forest classification algorithm is an ensemble learning method that is used for both classification and regression. In our case, we will use the method for classification purposes. Here, the random forest method takes random subsets from a training dataset and constructs classification trees using each of these subsets. Trees consist of *branches* and *leaves*.
+The Random Forest classification algorithm is an ensemble learning method that is used for both classification and regression. In our case, we will use the method for classification purposes. Here, the Random Forest method takes random subsets from a training dataset and constructs classification trees using each of these subsets. Trees consist of *branches* and *leaves*.
 
 Branches represent nodes of the decision trees, which are often thresholds defined for the measured (known) variables in the dataset. Leaves are the class labels assigned at the termini of the trees. Sampling many subsets at random will result in many trees being built. Classes are then assigned based on classes assigned by all of these trees based on a majority rule, as if each class assigned by a decision tree were considered to be a *vote*.
 
-Figure below gives a simple demonstration of how the random forest method works in principle. For an introduction to the random forest algorithm, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
+The figure below gives a simple demonstration of how the random forest method works in principle. For an introduction to the Random Forest algorithm, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
 
 
 ```{r random, echo=FALSE, fig.cap='Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.'}
@@ -149,9 +157,9 @@ img <- readPNG("figs//randomForestDescription.png")
 grid.raster(img)
 ```
 
-One major advantage of the Random Forest method is the fact that an *Out of the Bag* (OOB) error estimate and an estimate of variable performance are performed. For each classification tree assembled, a fraction of the training data are left out and used to compute the error for each tree by predicting the class associated with that value and comparing with the already known class. This process results in a confusion matrix, which we will explore in our analysis. In addition an importance score is computed for each variable in two forms: the mean decrease in accuracy for each variable, and the Gini impurity criterion, which will also be explored in our analysis.
+One major advantage of the Random Forest method is the fact that an *Out Of the Bag* (OOB) error estimate and an estimate of variable performance are performed. For each classification tree assembled, a fraction of the training data are left out and used to compute the error for each tree by predicting the class associated with that value and comparing with the already known class. This process results in a confusion matrix, which we will explore in our analysis. In addition an importance score is computed for each variable in two forms: the mean decrease in accuracy for each variable, and the Gini impurity criterion, which will also be explored in our analysis.
 
-We should first prepare the data on which the classification will be done. So far, we have prepared three bands from a ETM+ image in 2001 (bands 2, 3 and 4) as a `RasterBrick`, and have also calculated NDVI. In addition, there is a Vegetation Continuous Field (VCF) product available for the same period (2000).
+We should first prepare the data on which the classification will be done. So far, we have prepared three bands from an ETM+ image in 2001 (bands 2, 3 and 4) as a `RasterBrick`, and have also calculated NDVI. In addition, there is a Vegetation Continuous Field (VCF) product available for the same period (2000).
 
 For more information on the Landsat VCF product, see [here](http://glcf.umd.edu/data/landsatTreecover/). This product is also based on Landsat ETM+ data, and represents an estimate of tree cover (in %). Since this layer could also be useful in classifying land cover types, we will also include it as a potential covariate in the Random Forest classification.
 
@@ -184,8 +192,8 @@ First, let's rescale the original reflectance values to their original scale. Th
 
 ```{r, eval=TRUE, fig.align='center', fig.show='hide'}
 gewata <- calc(gewata, fun=function(x) x / 10000)
-## Make a new RasterBrick of covariates by adding NDVI and VCF layers
-covs <- addLayer(gewata, ndvi, vcfGewata)
+## Make a new RasterBrick of covariates by 'bricking' together the existing gewata brick and NDVI and VCF layers
+covs <- brick(c(gewata, ndvi, vcfGewata))
 plot(covs)
 ```
 
@@ -200,25 +208,29 @@ plot(covs)
 For this exercise, we will do a very simple classification for 2001 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2001.
 
 ```{r, fig.align='center', fig.width=5}
-## Load the training polygons
-load("data/trainingPoly.rda")
+## Load the training polygons as a simple features object
+trainingPoly <- st_read("data/trainingPoly.csv")
 ## Superimpose training polygons onto NDVI plot
 plot(ndvi)
-plot(trainingPoly, add = TRUE)
+plot(trainingPoly, col = 'transparent', border = '#000000', lwd = 2, add = TRUE)
 ```
 
 The training classes are labelled as string labels. For this exercise, we will need to work with integer classes, so we will need to first 'relabel' our training classes. There are several approaches that could be used to convert these classes to integer codes. In this case, we will first make a function that will reclassify the character strings representing land cover classes into integers based on the existing factor levels.
 
 ```{r reclassify}
-## Inspect the data slot of the trainingPoly object
-trainingPoly@data
-# The 'Class' column is actually an ordered factor type
-trainingPoly@data$Class
-str(trainingPoly@data$Class)
-# We can convert to integer by using the as.numeric() function,
-# which takes the factor levels
-trainingPoly@data$Code <- as.numeric(trainingPoly@data$Class)
-trainingPoly@data
+## Inspect the trainingPoly object (omitting the Well Known Text column containing lengthy geometry strings)
+trainingPoly[,2:ncol(trainingPoly)]
+
+# Convert the 'Class' column to an ordered factor type
+trainingPoly$Class <- as.factor(trainingPoly$Class)
+str(trainingPoly$Class)
+```
+
+```{r}
+# We can make a new 'Code' column by converting the factor levels to integer by using the as.numeric() function,
+trainingPoly$Code <- as.numeric(trainingPoly$Class)
+# Inspect the new 'Code' column
+trainingPoly[,2:ncol(trainingPoly)]
 ```
 
 To train the raster data, we need to convert our training data to the same type using the ```rasterize()``` function. This function takes a spatial object (in this case a polygon object) and transfers the values to raster cells defined by a raster object. Here, we will define a new raster containing those values.
@@ -257,7 +269,7 @@ covmasked <- mask(covs, classes)
 plot(covmasked)
 ## Combine this new brick with the classes layer to make our input training dataset
 names(classes) <- "class"
-trainingbrick <- addLayer(covmasked, classes)
+trainingbrick <- brick(c(covmasked, classes))
 plot(trainingbrick)
 ```
 
@@ -274,7 +286,7 @@ If you print `valuetable` to the console, you will notice that a lot of the rows
 valuetable <- na.omit(valuetable)
 ```
 
-Now we will convert to a `data.frame` and inspect the first and last 10 rows.
+Now we will convert the `matrix` to a `data.frame` and inspect the first and last 10 rows.
 
 ```{r}
 valuetable <- as.data.frame(valuetable)
@@ -326,6 +338,10 @@ We build the Random Forest model using the training data. For this, we will use 
 # Training classes (y) are found in the 'class' column of valuetable
 ## Caution: this step takes fairly long!
 # but can be shortened by setting importance=FALSE
+
+# Check for randomForest package and install if missing
+if(!"randomForest" %in% rownames(installed.packages())){install.packages("randomForest")}
+
 library(randomForest)
 modelRF <- randomForest(x=valuetable[ ,c(1:5)], y=valuetable$class,
                         importance = TRUE)
@@ -441,7 +457,7 @@ if(!file.exists(fn <- "data/clumformask.grd")) {
 } else {
   forestclumps <- raster(fn)
 }
-plot(forestclumps)
+plot(forestclumps, col=topo.colors(nrow(forestclumps)))
 ```
 
 When we inspect the frequency table with `freq()`, we can see the number of raster cells included in each of these clump IDs.
@@ -472,16 +488,18 @@ formaskSieve[forestclumps %in% excludeID] <- NA
 # Note: you can define your own zoom by using e <- drawExtent()
 e <- extent(c(811744.8, 812764.3, 849997.8, 850920.3))
 opar <- par(mfrow=c(1, 2)) # allow 2 plots side-by-side
-plot(formask, ext=e, col="dark green", legend=FALSE)
-plot(formaskSieve, ext=e, col="dark green", legend=FALSE)
-par(opar) # reset plotting window
+par(opar)
+plot(formask, ext=e, col="dark green", legend=FALSE, main='formask')
+plot(formaskSieve, ext=e, col="dark green", legend=FALSE, main='formaskSieve')
+par(mfrow = c(1, 1)) # reset plotting window
 ```
 
 We have successfully removed all *island* pixels from the forest mask using the `clump()` function. We can adjust our sieve criteria to only directly adjacent (NESW) neighbours: the so-called *Rook's Case*. To accomplish this, simply repeat the code above, but supply the argument `directions=4` when calling `clump()`.
 
 ```{r, eval=FALSE, echo=FALSE, results='hide', include=FALSE}
-## Install igraph package if not installed
-if (!require("igraph")) install.packages("igraph")
+## Check for igraph package and install if missing
+if(!"igraph" %in% rownames(installed.packages())){install.packages("igraph")}
+library(igraph)
 
 ## Group raster cells into clumps based on the Queen's Case
 ?clump
@@ -496,8 +514,8 @@ formaskSieve <- formask
 formaskSieve[forestclumps %in% excludeID] <- NA
 e <- extent(c(811744.8, 812764.3, 849997.8, 850920.3))
 opar <- par(mfrow = c(1, 2))
-plot(formask, ext=e, col="dark green", legend=FALSE)
-plot(formaskSieve, ext=e, col="dark green", legend=FALSE)
+plot(formask, ext=e, col="dark green", legend=FALSE, main='formask')
+plot(formaskSieve, ext=e, col="dark green", legend=FALSE, main='formaskSieve')
 par(opar)
 ```
 
@@ -516,7 +534,7 @@ freq(lulcGewata)
 hist(lulcGewata)
 ```
 
-This is a raster with integer values between 1 and 6, but for this raster to be meaningful at all, we need a lookup or attribute table to identify these classes. A `data.frame` defining these classes is also included in the lesson repository:
+This is a raster with integer values between 1 and 6, but for this raster to be meaningful at all, we need a lookup table (LUT) to identify these classes. A `data.frame` defining these classes is also included in the lesson repository:
 
 ```{r}
 load("data/LUTGewata.rda")
