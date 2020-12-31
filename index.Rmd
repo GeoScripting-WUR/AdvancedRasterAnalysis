@@ -214,25 +214,29 @@ trainingPoly <- readRDS("data/trainingPoly.rds")
 #trainingPoly <- st_read("data/trainingPoly.csv")
 ## Superimpose training polygons onto NDVI plot
 plot(ndvi)
-plot(trainingPoly, col = 'transparent', border = '#000000', lwd = 2, add = TRUE)
+plot(trainingPoly, add = TRUE)
 ```
 
 The training classes are labelled as string labels. For this exercise, we will need to work with integer classes, so we will need to first 'relabel' our training classes. There are several approaches that could be used to convert these classes to integer codes. In this case, we will first make a function that will reclassify the character strings representing land cover classes into integers based on the existing factor levels.
 
 ```{r reclassify}
-## Inspect the trainingPoly object (omitting the Well Known Text column containing lengthy geometry strings)
-trainingPoly[,2:ncol(trainingPoly)]
+## Inspect the trainingPoly object
+trainingPoly
 
-# Convert the 'Class' column to an ordered factor type
-trainingPoly$Class <- as.factor(trainingPoly$Class)
+# The 'Class' column is actually a factor
 str(trainingPoly$Class)
+
+# If you had to load the training polygons from a generic vector file and not an .RDS,
+# you would need to manually convert the 'Class' column to a factor, i.e.
+#trainingPoly$Class <- as.factor(trainingPoly$Class)
+
 ```
 
 ```{r}
 # We can make a new 'Code' column by converting the factor levels to integer by using the as.numeric() function,
 trainingPoly$Code <- as.numeric(trainingPoly$Class)
 # Inspect the new 'Code' column
-trainingPoly[,2:ncol(trainingPoly)]
+trainingPoly
 ```
 
 To train the raster data, we need to convert our training data to the same type using the ```rasterize()``` function. This function takes a spatial object (in this case a polygon object) and transfers the values to raster cells defined by a raster object. Here, we will define a new raster containing those values.
@@ -249,9 +253,11 @@ if (!file.exists(fn <- "data/classes.grd")) {
   classes <- raster(fn)
 }
 ```
-You might get warnings like `In '[<-'('*tmp*', cnt, value = p@polygons[[i]]@Polygons[[j]]) :  implicit list embedding of S4 objects is deprecated`. You can ignore these for now.
 
+```{block, type="alert alert-info"}
 **Note**: there is a handy `progress="text"` argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the`rasterize()` command above.
+```
+
 ```{r}
 ## Plotting
 # Define a colour scale for the classes (as above)
