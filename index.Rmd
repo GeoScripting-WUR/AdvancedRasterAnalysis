@@ -59,8 +59,12 @@ We will begin exploring these data simply by downloading and visualizing them. T
 # check for raster package and install if missing
 if(!"raster" %in% rownames(installed.packages())){install.packages("raster")}
 
+# check for sf package and install if missing
+if(!"sf" %in% rownames(installed.packages())){install.packages("sf")}
+
 ## Libraries
 library(raster)
+library(sf)
 ## Download, unzip and load the data
 # data folder must be created in your project directory
 ifelse(!dir.exists(file.path("data")), dir.create(file.path("data")), FALSE)
