@@ -124,7 +124,9 @@ Note that both `hist()` and `pairs()` compute histograms and scatterplots based 
 
 Calling `pairs()` on a `RasterBrick` reveals potential correlations between the layers themselves. In the case of bands 2-4 of the gewata subset, we can see that band 2 and 3 (in the visual part of the EM spectrum) are highly correlated, while band 4 contains significant non-redundant information.
 
+```{block, type="alert alert-success"}
 > **Question 1**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
+```
 
 ETM+ band 4 (nearly equivalent to band 5 in the Landsat 8 OLI sensor) is situated in the near infrared (NIR) region of the EM spectrum and is often used to describe vegetation-related features.
 
@@ -411,7 +413,9 @@ In this case, it seems that Gewata bands 3 and 4 have the highest impact on accu
 
 Since the VCF layer included NAs (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate Random Forest model as above, but excluding this layer.
 
+```{block, type="alert alert-success"}
 > **Question 2**:  What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What effect does leaving this variable out have on the processing time (hint: use `system.time()`)?
+```
 
 Now we apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `raster` package. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `randomForest()` function.
 
@@ -541,7 +545,9 @@ par(opar)
 
 We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask.
 
+```{block, type="alert alert-success"}
 > **Question 3:** How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectares? Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
+```
 
 ## Working with thematic rasters
 
