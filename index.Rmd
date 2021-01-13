@@ -66,11 +66,15 @@ if(!"sf" %in% rownames(installed.packages())){install.packages("sf")}
 library(raster)
 library(sf)
 ## Download, unzip and load the data
-download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/archive/gh-pages.zip', destfile = file.path(tempdir(), 'data.zip'), method = 'auto')
-unzip(file.path(tempdir(), 'data.zip'), exdir=tempdir())
+tempdir = "temp"
+if (!dir.exists(tempdir)) dir.create(tempdir)
+download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/archive/gh-pages.zip', destfile = file.path(tempdir, 'data.zip'), method = 'auto')
+unzip(file.path(tempdir, 'data.zip'), exdir=tempdir)
 # Move from the temp dir to your working directory and clean up
-file.rename(file.path(tempdir(), 'AdvancedRasterAnalysis-gh-pages', 'data'), 'data')
-unlink(file.path(tempdir(), 'AdvancedRasterAnalysis-gh-pages'), TRUE)
+file.rename(file.path(tempdir, 'AdvancedRasterAnalysis-gh-pages', 'data'), 'data')
+unlink(file.path(tempdir, 'AdvancedRasterAnalysis-gh-pages'), TRUE)
+file.remove(file.path(tempdir, 'data.zip'))
+file.remove(tempdir)
 
 ## Load data
 load("data/GewataB2.rda")
