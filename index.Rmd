@@ -471,6 +471,10 @@ First, we will use the `clump()` function in the raster package to identify clum
 This function arbitrarily assigns an ID to these clumps.
 
 ```{r, results='hide', fig.show='hide'}
+## The igraph package is needed for the clump function
+if(!"igraph" %in% rownames(installed.packages())){install.packages("igraph")}
+library(igraph)
+
 ## Group raster cells into clumps based on the Queen's Case
 if(!file.exists(fn <- "data/clumformask.grd")) {
   forestclumps <- clump(formask, directions=8, filename=fn)
