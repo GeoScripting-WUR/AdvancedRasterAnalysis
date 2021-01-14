@@ -341,7 +341,7 @@ legend("topright", legend=c("cropland", "forest", "wetland"), fill=c("orange", "
 
 We can see from these distributions that these covariates may do well in classifying forest pixels, but we may expect some confusion between cropland and wetland (although the individual bands may help to separate these classes). You can save the training data using the `write.csv()` command, in case something goes wrong after this point and you need to start over again.
 
-#### Run Random Forest classificaiton
+#### Run Random Forest classification
 We build the Random Forest model using the training data. For this, we will use the `randomForest` package in R. Using the `randomForest()` function, we will build a model based on a matrix of predictors or covariates (ie. the first 5 columns of valuetable) related to the response (the `class` column of valuetable).
 
 ```{block, type="alert alert-info"}
