@@ -56,73 +56,59 @@ These data have been processed using the [LEDAPS framework](http://dx.doi.org/10
 We will begin exploring these data simply by downloading and visualizing them. The data is the same Gewata data from Lesson 5, but in this case all the bands are saved as a separate file. We also have a VCF (Vegetation Continuous Field) data and training polygons which will be useful in this lesson. We will be making use of the [RasterBrick](https://www.rdocumentation.org/packages/raster/versions/3.4-5/topics/brick) object.
 
 ```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
-# check for raster package and install if missing
+# check for packages and install if missing
 if(!"raster" %in% rownames(installed.packages())){install.packages("raster")}
-
-# check for sf package and install if missing
+if(!"rgdal" %in% rownames(installed.packages())){install.packages("rgdal")}
 if(!"sf" %in% rownames(installed.packages())){install.packages("sf")}
+if(!"ranger" %in% rownames(installed.packages())){install.packages("ranger")}
 
-## Libraries
 library(raster)
+library(rgdal)
 library(sf)
-## Download, unzip and load the data
-tempdir = "temp"
-if (!dir.exists(tempdir)) dir.create(tempdir)
-download.file(url = 'https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/archive/gh-pages.zip', destfile = file.path(tempdir, 'data.zip'), method = 'auto')
-unzip(file.path(tempdir, 'data.zip'), exdir=tempdir)
-# Move from the temp dir to your working directory and clean up
-file.rename(file.path(tempdir, 'AdvancedRasterAnalysis-gh-pages', 'data'), 'data')
-unlink(file.path(tempdir, 'AdvancedRasterAnalysis-gh-pages'), TRUE)
-file.remove(file.path(tempdir, 'data.zip'))
-file.remove(tempdir)
+
+## Download data
+if (!dir.exists("data"))
+    dir.create("data")
+download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/releases/download/advrast-data/AdvancedRaster.zip", "data/AdvancedRaster.zip")
+unzip("data/AdvancedRaster.zip", exdir="data")
 
 ## Load data
-load("data/GewataB2.rda")
-load("data/GewataB3.rda")
-load("data/GewataB4.rda")
-
+Gewata<-brick("data/S2B2A_T36NZP_20201227T075239_20m_gewata_crop.tif")
+names(Gewata)<-readLines("data/S2B2A_T36NZP_20201227T075239_20m_gewata_bands.txt")
+# The image is cloud-free, so drop the cloud mask layer
+Gewata<-dropLayer(Gewata, "SCL")
 ## Check out the attributes
-GewataB2
+Gewata$B02
 ## Some basic statistics using cellStats() from the raster package
-cellStats(GewataB2, stat=max)
-cellStats(GewataB2, stat=mean)
+cellStats(Gewata$B02, stat=max)
+cellStats(Gewata$B02, stat=mean)
 # This is equivalent to:
-maxValue(GewataB2)
+maxValue(Gewata$B02)
 ## What is the maximum value of all three bands?
-max(c(maxValue(GewataB2), maxValue(GewataB3), maxValue(GewataB4)))
+max(c(maxValue(Gewata$B02), maxValue(Gewata$B8A), maxValue(Gewata$B11)))
 ## summary() is useful function for a quick overview
-summary(GewataB2)
-
-## Put the 3 bands into a RasterBrick object to summarize together
-gewata <- brick(GewataB2, GewataB3, GewataB4)
-# 3 histograms in one window (automatic, if a RasterBrick is supplied)
-hist(gewata, maxpixels=1000)
+summary(Gewata$B02)
 ```
 
-When we plot the histogram of the `RasterBrick`, the scales of the axes and the bin sizes are not equivalent, which could be problematic. This can be solved by adjusting these paramters in `hist()`. The raster `hist()` function inherits arguments from the function of the same name from the `graphics` package. To view additional arguments, type:
+You might get different values for cellStats an maxValue, the reason for this is that the cellStats looks at all the pixel values whereas the maxValue function takes a subset of the pixel values. As a result maxValue is faster than cellStats. 
 
-```{r, eval=FALSE}
-?graphics::hist
-```
 
-To ensure that our histograms are of the same scale, we should consider the `xlim`, `ylim` and `breaks` arguments.
-
-```{r, message=FALSE, include=TRUE}
-par(mfrow = c(1, 1)) # reset plotting window
-hist(gewata, xlim = c(0, 5000), ylim = c(0, 750000), breaks = seq(0, 5000, by = 100))
+``` {r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
+# histograms for all the bands in one window (automatic, if a RasterBrick is supplied)
+hist(Gewata, maxpixels=1000)
 ```
 
 Note that the values of these bands have been rescaled by a factor of 10,000. This is done for file storage considerations. For example, a value of 0.5643 stored as a float takes up more disk space than a value of 5643 stored as an integer. If you prefer reflectance values in their original scale (from 0 to 1), this can easily be done using raster algebra or `calc()`. We will do this later.
 
 A scatterplot matrix can be helpful in exploring relationships between raster layers. This can be done with the `pairs()` function of the raster package, which (like `hist()`) is a wrapper for the same function found in the `graphics` packages.
 
-```{r, fig.width=7}
-pairs(gewata)
+```{r, fig.width=12, fig.height=10}
+pairs(Gewata, maxpixels=1000)
 ```
 
 Note that both `hist()` and `pairs()` compute histograms and scatterplots based on a random sample of raster pixels. The size of this sample can be changed with the argument `maxpixels` in either function.
 
-Calling `pairs()` on a `RasterBrick` reveals potential correlations between the layers themselves. In the case of bands 2-4 of the gewata subset, we can see that band 2 and 3 (in the visual part of the EM spectrum) are highly correlated, while band 4 contains significant non-redundant information.
+Calling `pairs()` on a `RasterBrick` reveals potential correlations between the layers themselves. In the case of bands of the Gewata subset, we can see that band 3 and 5 (in the visual part of the EM spectrum) and bands 6 and 7 (in the near infrared part of the EM spectrum) are highly correlated. Similar correlation also exist between band 11 and 12. While band 8a contains significant non-redundant information.
 
 ```{block, type="alert alert-success"}
 > **Question 1**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
@@ -136,15 +122,19 @@ In the previous lesson, we explored several ways to calculate NDVI, using direct
 
 ```{r}
 par(mfrow = c(1, 1)) # reset plotting window
-ndvi <- overlay(GewataB4, GewataB3, fun=function(x,y){(x-y)/(x+y)})
+ndvi <- overlay(Gewata$B8A, Gewata$B04, fun=function(x,y){(x-y)/(x+y)})
 plot(ndvi)
 ```
 
-Aside from the advantages of `calc()` and `overlay()` regarding memory usage, an additional advantage of these functions is the fact that the result can be written immediately to file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload in subsequent sessions without having to repeat your analysis.
+Aside from the advantages of `calc()` and `overlay()` regarding memory usage, an additional advantage of these functions is the fact that the result can be written immediately to the file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload in subsequent sessions without having to repeat your analysis.
+
+```{block, type="alert alert-success"}
+> **Question 2**: What is the advantage of including the NDVI layer in the classification?
+```
 
 ## Classifying raster data
 
-One of the most important tasks in analysis of remote sensing image analysis is image classification. In classifying the image, we take the information contained in the various bands (possibly including other synthetic bands such as NDVI or principal components). There are two approaches for image classification: supervised and unsupervised. In this tutorial we will explore supervised classification based on the Random Forest method.  
+One of the most important tasks in analysis of remote sensing image analysis is image classification. In classifying the image, we take the information contained in the various bands (possibly including other synthetic bands such as NDVI or principal components). There are two approaches for image classification: supervised and unsupervised. In this tutorial we will explore supervised classification based on the Random Forest method.
 
 
 ### Supervised classification: Random Forest
@@ -153,72 +143,46 @@ The Random Forest classification algorithm is an ensemble learning method that i
 
 Branches represent nodes of the decision trees, which are often thresholds defined for the measured (known) variables in the dataset. Leaves are the class labels assigned at the termini of the trees. Sampling many subsets at random will result in many trees being built. Classes are then assigned based on classes assigned by all of these trees based on a majority rule, as if each class assigned by a decision tree were considered to be a *vote*.
 
-The figure below gives a simple demonstration of how the random forest method works in principle. For an introduction to the Random Forest algorithm, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013).
+The figure below gives a simple demonstration of how the random forest method works in principle. For an introduction to the Random Forest algorithm, see this [presentation](http://www.slideshare.net/0xdata/jan-vitek-distributedrandomforest522013). For more information on random forest implementation in R see this [tutorial](https://uc-r.github.io/random_forests).
 
-
+<!--
 ```{r random, echo=FALSE, fig.cap='Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.'}
 library(png)
 library(grid)
 img <- readPNG("figs//randomForestDescription.png")
 grid.raster(img)
 ```
-
-One major advantage of the Random Forest method is the fact that an *Out Of the Bag* (OOB) error estimate and an estimate of variable performance are performed. For each classification tree assembled, a fraction of the training data are left out and used to compute the error for each tree by predicting the class associated with that value and comparing with the already known class. This process results in a confusion matrix, which we will explore in our analysis. In addition an importance score is computed for each variable in two forms: the mean decrease in accuracy for each variable, and the Gini impurity criterion, which will also be explored in our analysis.
-
-We should first prepare the data on which the classification will be done. So far, we have prepared three bands from an ETM+ image in 2001 (bands 2, 3 and 4) as a `RasterBrick`, and have also calculated NDVI. In addition, there is a Vegetation Continuous Field (VCF) product available for the same period (2000).
-
-For more information on the Landsat VCF product, see [here](http://glcf.umd.edu/data/landsatTreecover/). This product is also based on Landsat ETM+ data, and represents an estimate of tree cover (in %). Since this layer could also be useful in classifying land cover types, we will also include it as a potential covariate in the Random Forest classification.
-
-<!--
-can we show a bit more about this data set - where does it come from
-can we provide an option to download it themselve for any location?
 -->
+![Schematic showing how the Random Forest method constructs classification trees from random subsets of a training dataset. Each tree determines the labels assigned based on the training dataset. Once all trees are assembled, classes are assigned to unknown pixels based on the class which receives the majority of votes based on all the decision trees constructed.](figs/randomForestDescription.png)
 
-```{r, fig.align='center'}
-## Load the data and check it out
-load("data/vcfGewata.rda")
-vcfGewata
-plot(vcfGewata)
-summary(vcfGewata)
-hist(vcfGewata)
-```
+One major advantage of the Random Forest method is the fact that an *Out Of the Bag* (OOB) cross-validation error estimate and an estimate of variable performance are performed. For each classification tree assembled, a fraction of the training data are left out and used to compute the error for each tree by predicting the class associated with that value and comparing with the already known class. This process results in a confusion matrix, which we will explore in our analysis. In addition an importance score is computed for each variable in two forms: the mean decrease in accuracy for each variable, and the Gini impurity criterion, which will also be explored in our analysis.
 
-In the `vcfGewata` rasterLayer there are some values much greater than 100 (the maximum tree cover), which are flags for water, cloud or cloud shadow pixels. To avoid these values, we can assign a value of `NA` to these pixels so they are not used in the classification.
-
-```{r}
-vcfGewata[vcfGewata > 100] <- NA
-plot(vcfGewata)
-summary(vcfGewata)
-hist(vcfGewata)
-```
-
-To perform the classification in R, it is best to assemble all covariate layers (ie. those layers contaning predictor variable values) into one `RasterBrick` object. In this case, we can simply append these new layers (NDVI and VCF) to our existing `RasterBrick` (currently consisting of bands 2, 3, and 4).
+To perform the classification in R, it is best to assemble all covariate layers (ie. those layers contaning predictor variable values) into one `RasterBrick` object. In this case, we can simply append the new layer (NDVI) to our existing `RasterBrick` (currently consisting of different bands).
 
 First, let's rescale the original reflectance values to their original scale. This step is not required for the RF classification, but it might help with the interpretation, if you are used to thinking of reflectance as a value between 0 and 1. (On the other hand, for very large raster bricks, it might be preferable to leave them in their integer scale, but we won't go into more detail about that here.)
 
 ```{r, eval=TRUE, fig.align='center', fig.show='hide'}
-gewata <- calc(gewata, fun=function(x) x / 10000)
-## Make a new RasterStack of covariates by 'stacking' together the existing gewata brick and NDVI and VCF layers
-covs <- stack(gewata, ndvi, vcfGewata)
+gewata <- calc(Gewata, fun=function(x) x / 10000)
+## Make a new RasterStack of covariates by 'stacking' together the existing gewata brick and NDVI
+covs <- stack(gewata, ndvi)
 plot(covs)
 ```
 
 You'll notice that we didn't give our NDVI layer a name yet. It's good to make sure that the raster layer names make sense, so you don't forget which band is which later on. Let's change all the layer names (**make sure you get the order right!**).
 
-```{r, fig.width=15}
-names(covs) <- c("band2", "band3", "band4", "NDVI", "VCF")
-plot(covs)
+```{r}
+names(covs) <- c(names(Gewata),"NDVI")
+names(covs)
 ```
 
-#### Training data preparation
-For this exercise, we will do a very simple classification for 2001 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2001.
+### Training data preparation
+For this exercise, we will do a very simple classification for 2020 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2020
 
-```{r, fig.align='center', fig.width=5}
-## Load the training polygons as a simple features object
-trainingPoly <- readRDS("data/trainingPoly.rds")
-# Note that alternatively we could load a file that is not specific to R using st_read:
-#trainingPoly <- st_read("data/trainingPoly.csv")
+```{r, fig.align='center', fig.width=5, warning=FALSE}
+## we load the training polygons as a csv file using st_read:
+trainingPoly <- st_read("data/trainingPoly.csv")
 ## Superimpose training polygons onto NDVI plot
+par(mfrow = c(1, 1)) # reset plotting window
 plot(ndvi)
 plot(trainingPoly, add = TRUE)
 ```
@@ -227,14 +191,13 @@ The training classes are labelled as string labels. For this exercise, we will n
 
 ```{r reclassify}
 ## Inspect the trainingPoly object
+trainingPoly<-trainingPoly[,c(2:4)] #remove an unused column
 trainingPoly
 
-# The 'Class' column is actually a factor
-str(trainingPoly$Class)
-
-# If you had to load the training polygons from a generic vector file and not an .RDS,
-# you would need to manually convert the 'Class' column to a factor, i.e.
-#trainingPoly$Class <- as.factor(trainingPoly$Class)
+# The 'Class' column is a character but should be converted to factor 
+summary(trainingPoly$Class)
+trainingPoly$Class <- as.factor(trainingPoly$Class)
+summary(trainingPoly$Class)
 
 ```
 
@@ -242,26 +205,7 @@ str(trainingPoly$Class)
 # We can make a new 'Code' column by converting the factor levels to integer by using the as.numeric() function,
 trainingPoly$Code <- as.numeric(trainingPoly$Class)
 # Inspect the new 'Code' column
-trainingPoly
-```
-
-To train the raster data, we need to convert our training data to the same type using the ```rasterize()``` function. This function takes a spatial object (in this case a polygon object) and transfers the values to raster cells defined by a raster object. Here, we will define a new raster containing those values.
-
-```{r, eval=FALSE}
-## Assign 'Code' values to raster cells (where they overlap)
-classes <- rasterize(trainingPoly, ndvi, field='Code')
-```
-
-```{r, message=FALSE, echo=FALSE, results='hide'}
-if (!file.exists(fn <- "data/classes.grd")) {
-  classes <- rasterize(trainingPoly, ndvi, field='Code', filename=fn)
-} else {
-  classes <- raster(fn)
-}
-```
-
-```{block, type="alert alert-info"}
-**Note**: there is a handy `progress="text"` argument, which can be passed to many of the raster package functions and can help to monitor processing. Try passing this argument to the`rasterize()` command above.
+summary(trainingPoly$Code)
 ```
 
 ```{r}
@@ -269,107 +213,92 @@ if (!file.exists(fn <- "data/classes.grd")) {
 # Define a colour scale for the classes (as above)
 # corresponding to: cropland, forest, wetland
 cols <- c("orange", "dark green", "light blue")
-## Plot without a legend
-plot(classes, col=cols, legend=FALSE)
-## Add a customized legend
+### Superimpose training polygons (colour by class) onto NDVI plot
+plot(ndvi)
+plot(trainingPoly["Class"], add = TRUE, pal=cols)
+## Add a customised legend
 legend("topright", legend=c("cropland", "forest", "wetland"), fill=cols, bg="white")
 ```
 
 
-Our goal in preprocessing these data is to have a table of values representing all layers (covariates) with *known* values/classes. To do this, we will first need to create a version of our `RasterBrick` only representing the training pixels. Here, we use the `mask()` function from the raster package.
+Our goal in preprocessing this data is to have a table of values representing all layers (covariates) with *known* values/classes. To do this, we will first need to know the values of the covariates at our training polygon locations. We can use `extract` function of raster package for this. Next we convert these data to a `data.frame` representing all training data.
 
-```{r, include=TRUE}
-covmasked <- mask(covs, classes)
-plot(covmasked)
-## Combine this new brick with the classes layer to make our input training dataset
-names(classes) <- "class"
-trainingstack <- addLayer(covmasked, classes)
-plot(trainingstack)
+```{r include=TRUE, results='hide'}
+## Extract pixel values below the polygons
+trainingData<-extract(covs, trainingPoly)
+# Check structure
+str(trainingData)
+# It is a matrix (rows are pixels, columns are bands) per polygon
+# Convert each matrix to a data.frame and add the class column from the polygons
+valuetable <- lapply(1:length(trainingData), function(polygonID) cbind.data.frame(trainingData[[polygonID]], Class=trainingPoly$Class[polygonID]))
+# Unlist into one long data.frame
+valuetable <- do.call(rbind, valuetable)
+
 ```
 
-Now we convert these data to a `data.frame` representing all training data. This data.frame will be used as an input into the RandomForest classification function. We will use `getValues()` to extract all of the values from the layers of the RasterBrick.
-
-```{r, results='hide'}
-## Extract all values into a matrix
-valuetable <- getValues(trainingstack)
-```
-
-If you print `valuetable` to the console, you will notice that a lot of the rows are filled with `NA`. This is because all raster cell values have been taken, include those with NA values. We can get rid of these rows by using the `na.omit()` function.
+This data.frame will be used as an input into the RandomForest classification function. We then inspect the first and last 10 rows.
 
 ```{r}
-valuetable <- na.omit(valuetable)
-```
 
-Now we will convert the `matrix` to a `data.frame` and inspect the first and last 10 rows.
-
-```{r}
-valuetable <- as.data.frame(valuetable)
 head(valuetable, n = 10)
 tail(valuetable, n = 10)
 ```
 
-We have our training dataset as a `data.frame`, let's convert the class column into a factor (since the values as integers don't really have a meaning).
+We have our training dataset as a `data.frame` with the class column as a factor. If it is integer, random forest regression will be run, instead of classification. So, good to check on that. 
 
-```{r}
-valuetable$class <- factor(valuetable$class, levels = c(1:3))
-```
-
-Now we have a convenient training data table which contains, for each of the three defined classes,values for all covariates. Let's visualize the distribution of some of these covariates for each class. To make this easier, we will create 3 different data.frames for each of the classes. This is just for plotting purposes, and we will not use these in the actual classification.
+Now we have a convenient training data table which contains, for each of the three defined classes, values for all covariates. Let's visualize the distribution of some of these covariates for each class. To make this easier, we will create 3 different data.frames for each of the classes. This is just for plotting purposes, and we will not use these in the actual classification.
 
 ```{r, eval=TRUE, fig.width=12, fig.height=15}
-val_crop <- subset(valuetable, class == 1)
-val_forest <- subset(valuetable, class == 2)
-val_wetland <- subset(valuetable, class == 3)
+val_crop <- subset(valuetable, Class == "cropland")
+val_forest <- subset(valuetable, Class == "forest")
+val_wetland <- subset(valuetable, Class == "wetland")
 
 ## NDVI
 par(mfrow = c(3, 1))
-hist(val_crop$NDVI, main = "cropland", xlab = "NDVI", xlim = c(0, 1), ylim = c(0, 4000), col = "orange")
-hist(val_forest$NDVI, main = "forest", xlab = "NDVI", xlim = c(0, 1), ylim = c(0, 4000), col = "dark green")
-hist(val_wetland$NDVI, main = "wetland", xlab = "NDVI", xlim = c(0, 1), ylim = c(0, 4000), col = "light blue")
+hist(val_crop$NDVI, main = "cropland", xlab = "NDVI", xlim = c(0, 1), col = "orange")
+hist(val_forest$NDVI, main = "forest", xlab = "NDVI", xlim = c(0, 1),  col = "dark green")
+hist(val_wetland$NDVI, main = "wetland", xlab = "NDVI", xlim = c(0, 1), col = "light blue")
 par(mfrow = c(1, 1))
 ```
 
-> Other covariates such as VCF can also be plotted like above.
+> Other covariates such as the bands can also be plotted like above.
 
 ```{r, eval=TRUE, fig.width=10, fig.height=6}
-## 3. Bands 3 and 4 (scatterplots)
-plot(band4 ~ band3, data = val_crop, pch = ".", col = "orange", xlim = c(0, 0.2), ylim = c(0, 0.5))
-points(band4 ~ band3, data = val_forest, pch = ".", col = "dark green")
-points(band4 ~ band3, data = val_wetland, pch = ".", col = "light blue")
+## 3. Bands 8a and 11 (scatterplots)
+plot(B8A ~ B11, data = val_crop, pch = ".", col = "orange", xlim = c(0, 0.4), ylim = c(0, 0.5))
+points(B8A ~ B11, data = val_forest, pch = ".", col = "dark green")
+points(B8A ~ B11, data = val_wetland, pch = ".", col = "light blue")
 legend("topright", legend=c("cropland", "forest", "wetland"), fill=c("orange", "dark green", "light blue"), bg="white")
 ```
 
-> Try to produce the same scatterplot plot as in #3 looking at the relationship between other bands (e.g. bands 2 and 3, band 4 and VCF, etc.)
+```{block, type="alert alert-success"}
+> **Question 3**: Try to produce the same scatterplot plot as above looking at the relationship between other bands. Try B02 & B05, B07 & NDVI (you might have adjust the xlim to incorporate the NDVI values) and another of your choice. What can you say about the relationships between these bands? Which ones give a clear distinction between classes, and where is this less clear?
+```
+
 
 We can see from these distributions that these covariates may do well in classifying forest pixels, but we may expect some confusion between cropland and wetland (although the individual bands may help to separate these classes). You can save the training data using the `write.csv()` command, in case something goes wrong after this point and you need to start over again.
 
-#### Run Random Forest classification
-We build the Random Forest model using the training data. For this, we will use the `randomForest` package in R. Using the `randomForest()` function, we will build a model based on a matrix of predictors or covariates (ie. the first 5 columns of valuetable) related to the response (the `class` column of valuetable).
+### Run Random Forest classification
+We build the Random Forest model using the training data. For this, we will use the `ranger` package in R. There is also `randomForest` package available in R. However, `ranger` is is implemented in C++ with multithreading and thus is much faster. 
+Using the `ranger()` function, we will build a model based on a matrix of predictors or covariates (ie. the first 10 columns of valuetable) related to the response (the `Class` column of valuetable).
 
-```{block, type="alert alert-info"}
-**Note**: the *randomForest* package is the reference implementation of Random Forest in R. However, it is very slow. For any work beyond such a simple example, you should use the *ranger* package, which is implemented in C++ with multithreading and thus is much faster.
-```
+### Construct a random forest model. 
+
+Covariates (x) are found in columns 1 to 10 of valuetable. Training classes (y) are found in the 'class' column of valuetable. *Caution: this step takes fairly long!* but can be shortened by setting importance=FALSE
 
 ```{r, eval=FALSE}
-## Construct a random forest model
-# Covariates (x) are found in columns 1 to 5 of valuetable
-# Training classes (y) are found in the 'class' column of valuetable
-## Caution: this step takes fairly long!
-# but can be shortened by setting importance=FALSE
 
-# Check for randomForest package and install if missing
-if(!"randomForest" %in% rownames(installed.packages())){install.packages("randomForest")}
-
-library(randomForest)
-modelRF <- randomForest(x=valuetable[ ,c(1:5)], y=valuetable$class,
-                        importance = TRUE)
+library(ranger)
+modelRF <- ranger(x=valuetable[, 1:ncol(valuetable)-1], y=valuetable$Class,
+                  importance = "permutation", seed=0xfedbeef)
 ```
 
 ```{r, echo=FALSE, results='hide'}
-library(randomForest)
+library(ranger)
 if(!file.exists("data/modelRF.rda")){
-  modelRF <- randomForest(x = valuetable[,c(1:5)], y = valuetable$class,
-                        importance = TRUE)
+ modelRF <- ranger(x=valuetable[, 1:ncol(valuetable)-1], 
+                                y=valuetable$Class,
+                                importance = "permutation", seed=0xfedbeef)
   save(modelRF, file='data/modelRF.rda', compress="bzip2", ascii=FALSE)
 } else {
   load('data/modelRF.rda')
@@ -382,46 +311,41 @@ Since the random forest method involves the building and testing of many classif
 **Note**: there is a similar functionality using the `save()` and `load()` commands, but those can save more than one object and don't tell you their names, you have to know them. That is why `saveRDS()`/`readRDS()` is preferred, but in this tutorial in a lot of cases `load` is still being used.
 ```
 
-The resulting object from the `randomForest()` function is a specialized object of class `randomForest`, which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
+The resulting object from the `ranger()` function is a specialized object of class `ranger`, which is a large list-type object packed full of information about the model output. Elements of this object can be called and inspected like any list object.
 
-```{r inspect_RFmodel, results='hide'}
+```{r, results='hide', eval=FALSE}
 ## Inspect the structure and element names of the resulting model
 modelRF
 class(modelRF)
 str(modelRF)
 names(modelRF)
 ## Inspect the confusion matrix of the OOB error assessment
-modelRF$confusion
-# to make the confusion matrix more readable
-colnames(modelRF$confusion) <- c("cropland", "forest", "wetland", "class.error")
-rownames(modelRF$confusion) <- c("cropland", "forest", "wetland")
-modelRF$confusion
+modelRF$confusion.matrix
+
 ```
 
-Since we set `importance=TRUE`, we now also have information on the statistical importance of each of our covariates which we can visualize using the `varImpPlot()` command.
+Earlier we provided a brief explanation of OOB error, though it can be a valuable metric for evaluating your model, it can overestimate the true prediction error depending on the parameters presents in the model.
 
-```{r, fig.width=10}
-varImpPlot(modelRF)
+Since we set `importance="permutation"`, we now also have information on the statistical importance of each of our covariates which we can retrieve using the `importance()` command.
+
+```{r importance}
+importance(modelRF)
 ```
-The figure above shows the variable importance plots for a Random Forest model showing the mean decrease in accuracy (left) and the decrease in Gini Impurity Coefficient (right) for each variable.
+The  above shows the variable importance for a Random Forest model showing the mean decrease in accuracy for each variable.
 
-These two plots give two different reports on variable importance (see `?importance()`).
+The mean decrease in accuracy indicates the amount by which the classification accuracy decreased based on the `OOB` assessment. In this case, it seems that Gewata bands 12 and 2 have the highest impact on accuracy. For large datasets, it may be helpful to know this information, and leave out less important variables for subsequent runs of the `ranger()` function.
 
-First, the mean decrease in accuracy indicates the amount by which the classification accuracy decreased based on the `OOB` assessment. Second, the Gini impurity coefficient gives a measure of class homogeneity. More specifically, the decrease in the Gini impurity coefficient when including a particular variable is shown in the plot. From [Wikipedia](http://en.wikipedia.org/wiki/Decision_tree_learning): "Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it were randomly labeled according to the distribution of labels in the subset".
-
-In this case, it seems that Gewata bands 3 and 4 have the highest impact on accuracy, while bands 3 and 2 score highest with the Gini impurity criterion. For especially large datasets, it may be helpful to know this information, and leave out less important variables for subsequent runs of the `randomForest()` function.
-
-Since the VCF layer included NAs (which have also been excluded in our results) and scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate Random Forest model as above, but excluding this layer.
+Since the NDVI layer scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate Random Forest model as above, but excluding this layer, you can name it something like 'modelRF2'.
 
 ```{block, type="alert alert-success"}
-> **Question 2**:  What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What effect does leaving this variable out have on the processing time (hint: use `system.time()`)?
+> **Question 4**:  What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What effect does leaving this variable out have on the processing time (hint: use `system.time()`)?
 ```
 
-Now we apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `raster` package. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `randomForest()` function.
+Now we apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `raster` package. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `ranger()` function.
 
 ```{r, echo=FALSE, results='hide'}
 if (!file.exists(fn <- "data/predLC.grd")) {
-  predLC <- predict(covs, model=modelRF, na.rm=TRUE, filename = fn)
+  predLC <-raster::predict(covs, modelRF, fun=function(...) predict(...)$predictions, filename = fn)
 } else {
   predLC <- raster(fn)
 }
@@ -436,7 +360,7 @@ names(valuetable)
 
 ```{r, eval=FALSE}
 ## Predict land cover using the RF model
-predLC <- predict(covs, model=modelRF, na.rm=TRUE)
+predLC <-raster::predict(covs, modelRF, fun=function(...) predict(...)$predictions)
 ```
 
 ```{r, fig.width=7}
