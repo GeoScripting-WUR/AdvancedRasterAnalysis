@@ -49,16 +49,18 @@ Being able to:
 
 # Advanced Raster Analysis
 
-## Introduction to Landsat data used here
+## Introduction to Sentinel-2 data used here
 
-Since being released to the public, the Landsat data archive has become an invaluable tool for environmental monitoring. With a historical archive reaching back to the 1970's, the release of these data has resulted in a spur of time series based methods. In this tutorial, we will work with time series data from the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor. Landsat scenes are delivered via the USGS as a number of image layers representing the different bands captured by the sensors. In the case of the Landsat 7 Enhanced Thematic Mapper (ETM+) sensor, the bands are shown in the figure below. Using different combination of these bands can be useful in describing land features and change processes.
+We will carry out a supervised classification using Sentinel 2 data for Gewata region in Ethiopia. Athmospherically corrected Level 2A data acquired on December 27 2020 used in this excercise. The data is download from ESA's online data hub (https://scihub.copernicus.eu/dhus), a part of the Copernicus European Programme. As it is freely available, Sentinel data has been commonly used next to Landsat data for environmental monitoring.
+![Sentinel bands in comparison to Lansat bands ](figs/Landsat.v.Sentinel-2.jpg)
 
-![Landsat 7 ETM+ bands](figs/landsat_bands.jpg)
+## Data exploration
 
-Part of a Landsat scene, including bands 2-4 are included in the data provided here.
-These data have been processed using the [LEDAPS framework](http://dx.doi.org/10.3334/ORNLDAAC/1080), so the values contained in this dataset represent surface reflectance, scaled by 10000 (ie. divide by 10000 to get a reflectance value between 0 and 1).
+Download the data to your computer and open your preferred R IDE to the directory of this tutorial.
 
-We will begin exploring these data simply by downloading and visualizing them. The data is the same Gewata data from Lesson 5, but in this case all the bands are saved as a separate file. We also have a VCF (Vegetation Continuous Field) data and training polygons which will be useful in this lesson. We will be making use of the [RasterBrick](https://www.rdocumentation.org/packages/raster/versions/3.4-5/topics/brick) object.
+After downloading the data we begin with vizualization. The data consists of all the Sentinel 2 bands at a spatial resolution of 20 m. We will also make use of training polygons for the land cover classification. 
+
+We will be making use of the [RasterBrick](https://www.rdocumentation.org/packages/raster/versions/3.4-5/topics/brick) object.
 
 ```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
 # check for packages and install if missing
