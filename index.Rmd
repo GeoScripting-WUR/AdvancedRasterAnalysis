@@ -121,10 +121,6 @@ Calling `pairs()` on a `RasterBrick` reveals potential correlations between the 
 > **Question 1**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
 ```
 
-ETM+ band 4 (nearly equivalent to band 5 in the Landsat 8 OLI sensor) is situated in the near infrared (NIR) region of the EM spectrum and is often used to describe vegetation-related features.
-
-We observe a strong correlation between two of the Landsat bands of the gewata subset, but a very different distribution of values in band 4 (NIR). This distribution stems from the fact that vegetation reflects very highly in the NIR range, compared to the visual range of the EM spectrum. However, note that NIR reflectance saturates in very dense vegetated areas. A commonly used metric for assessing vegetation dynamics, the normalized difference vegetation index (NDVI), explained in the previous lesson, takes advantage of this fact and is computed from Landsat bands 3 (visible red) and 4 (near infra-red).
-
 In the previous lesson, we explored several ways to calculate NDVI, using direct raster algebra, `calc()` or `overlay()`. Since we will be using NDVI again later in this tutorial, let's calculate it again and store it in our workspace using `overlay()`.
 
 ```{r}
@@ -186,6 +182,7 @@ names(covs)
 For this exercise, we will do a very simple classification for 2020 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2020
 
 ```{r, fig.align='center', fig.width=5, warning=FALSE}
+download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/trainingPoly.csv", "data/trainingPoly.csv")
 ## we load the training polygons as a csv file using st_read:
 trainingPoly <- st_read("data/trainingPoly.csv")
 ## Superimpose training polygons onto NDVI plot
@@ -481,7 +478,7 @@ par(opar)
 We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask.
 
 ```{block, type="alert alert-success"}
-> **Question 3:** How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectares? Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
+> **Question 5:** How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectares? Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
 ```
 
 ## Working with thematic rasters
