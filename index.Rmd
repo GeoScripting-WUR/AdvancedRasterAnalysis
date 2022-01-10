@@ -11,7 +11,12 @@ output:
     highlight.chooser: TRUE
 ---
 
-# [WUR Geoscripting](https://geoscripting-wur.github.io/) <img src="https://www.wur.nl/upload/5e55a1d9-47c3-4149-9384-26d5147ee2d7_WUR_RGB_standard.png" alt="WUR logo" style="height: 35px;"/>
+<style type="text/css">
+body {max-width: none;}
+a:visited {color: #91170a;}
+</style>
+
+# [WUR Geoscripting](https://geoscripting-wur.github.io/) <img src="https://www.wur.nl/upload/854757ab-168f-46d7-b415-f8b501eebaa5_WUR_RGB_standard_2021-site.svg" alt="WUR logo" style="height: 35px;"/>
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
@@ -32,7 +37,7 @@ Morning  |  Self-study: go through the following tutorial
 Rest of the afternoon | Do/finalise the exercise.
 -->
 
-# Week 2, Lesson 7: Advanced Raster Analysis
+# Week 2, Lesson 6: Advanced Raster Analysis
 
 ## Learning outcomes of today:
 
@@ -482,7 +487,9 @@ We could take this approach further and apply a minimum mapping unit (MMU) to ou
 As we have seen with the land cover rasters we derived using the random forest above, the values of a raster may be categorical, meaning they relate to a thematic class (e.g. 'forest' or 'wetland') rather than a quantitative value (e.g. NDVI or % Tree Cover). The raster dataset 'lulcGewata' is a raster with integer values representing Land Use and Land Cover (LULC) classes from a 2011 classification (using SPOT5 and ASTER source data).
 
 ```{r}
-load("data/lulcGewata.rda")
+download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/releases/download/thematic-data/lulcGewata.zip", "data/lulcGewata.zip")
+unzip("data/lulcGewata.zip", exdir="data")
+lulcGewata <- raster("data/lulcGewata.tif")
 ## Check out the distribution of the values
 freq(lulcGewata)
 hist(lulcGewata)
@@ -491,7 +498,8 @@ hist(lulcGewata)
 This is a raster with integer values between 1 and 6, but for this raster to be meaningful at all, we need a lookup table (LUT) to identify these classes. A `data.frame` defining these classes is also included in the lesson repository:
 
 ```{r}
-load("data/LUTGewata.rda")
+LUTGewata <- read.csv("data/LUTGewata.csv")
+LUTGewata[[1]] <- NULL # Remove the name column
 LUTGewata
 ```
 
