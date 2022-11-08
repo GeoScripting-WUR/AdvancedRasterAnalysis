@@ -1,9 +1,10 @@
 ---
+pagetitle: "Tutorial 6: Advanced Raster Analysis"
 author: "Ben Devries, Jan Verbesselt, Loïc Dutrieux, Dainius Masiliūnas, Astrid Bos, Nandika Tsendbazar"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-pagetitle: "Lesson 6: Advanced Raster Analysis"
 output:
   knitrBootstrap::bootstrap_document:
+    title: "Tutorial 6: Advanced Raster Analysis"
     theme: "simplex"
     highlight: Tomorrow Night Bright
     menu: FALSE
@@ -23,7 +24,7 @@ library(knitr)
 opts_chunk$set(fig.width = 8, fig.align = 'center', fig.height = 8, dpi = 72)
 ```
 
-# Week 2, Lesson 6: Advanced Raster Analysis
+# Week 2, Tutorial 6: Advanced Raster Analysis
 
 ## Learning objectives
 * Carry out a supervised classification on a series of raster layers
@@ -53,9 +54,10 @@ library(terra)
 library(sf)
 library(ranger)
 
-# Download data
-if (!dir.exists("data"))
-    dir.create("data")
+# Create data folder, download data and unzip
+if (!dir.exists("data")) {
+  dir.create("data")
+}
 download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/releases/download/advrast-data/AdvancedRaster.zip", "data/AdvancedRaster.zip")
 unzip("data/AdvancedRaster.zip", exdir="data")
 
@@ -99,15 +101,15 @@ Calling `pairs()` on a `SpatRaster` reveals potential correlations between the l
 > **Question 1**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
 ```
 
-In the previous lesson, we explored several ways to calculate NDVI, using direct raster algebra, `app()` or `lapp()`. Since we will be using NDVI again later in this tutorial, let's calculate it again and store it in our workspace using `lapp()`.
+In the previous tutorial, we explored two ways to calculate NDVI, using direct raster algebra or using `app()`. Since we will be using NDVI again later in this tutorial, let's calculate it again and store it in our workspace using `app()`.
 
 ```{r}
 par(mfrow = c(1, 1)) # reset plotting window
-ndvi <- lapp(sds(Gewata$B8A, Gewata$B04), fun = function(x, y){(x - y) / (x + y)})
+ndvi <- app(c(Gewata$B8A, Gewata$B04), fun = function(x){(x[1] - x[2]) / (x[1] + x[2])})
 plot(ndvi)
 ```
 
-Aside from the advantages of `app()` and `lapp()` regarding memory usage, an additional advantage of these functions is the fact that the result can be written immediately to the file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload in subsequent sessions without having to repeat your analysis.
+Aside from the advantages of `app()` regarding memory usage, an additional advantage of this function is the fact that the result can be written immediately to the file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload in subsequent sessions without having to repeat your analysis.
 
 ```{block, type="alert alert-success"}
 > **Question 2**: What is the advantage of including the NDVI layer in the classification?
