@@ -21,7 +21,7 @@ a:visited {color: #91170a;}
 
 ```{r, echo=FALSE, message=FALSE}
 library(knitr)
-opts_chunk$set(fig.width = 8, fig.align = 'center', fig.height = 8, dpi = 72)
+opts_chunk$set(fig.width = 12, fig.align = 'center', fig.height = 8, dpi = 72)
 ```
 
 # Week 2, Tutorial 6: Advanced Raster Analysis
@@ -54,14 +54,21 @@ library(terra)
 library(sf)
 library(ranger)
 
-# Create data folder, download data and unzip
+# Create data folder,
 if (!dir.exists("data")) {
   dir.create("data")
 }
+
+# Create output folder
+if (!dir.exists("output")) {
+  dir.create("output")
+}
+
+# Download data and unzip
 download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/releases/download/advrast-data/AdvancedRaster.zip", "data/AdvancedRaster.zip")
 unzip("data/AdvancedRaster.zip", exdir="data")
 
-# Load data
+# Load data and rename the layers
 Gewata <- rast("data/S2B2A_T36NZP_20201227T075239_20m_gewata_crop.tif")
 names(Gewata) <- readLines("data/S2B2A_T36NZP_20201227T075239_20m_gewata_bands.txt")
 
@@ -152,9 +159,9 @@ names(covs)
 ```
 
 ### Training data preparation
-For this exercise, we will do a very simple classification for 2020 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2020
+For this exercise, we will do a very simple classification for 2020 using three classes: forest, cropland and wetland. While for other purposes it is usually better to define more classes (and possibly fuse classes later), a simple classification like this one could be useful, for example, to construct a forest mask for the year 2020.
 
-```{r, fig.align='center', fig.width=5, warning=FALSE}
+```{r, fig.align='center', warning=FALSE}
 # Download training polygons
 download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/trainingPoly.csv", "data/trainingPoly.csv")
 
@@ -310,7 +317,7 @@ Since the NDVI layer scores relatively low according to the mean accuracy decrea
 Now we apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `raster` package. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `ranger()` function.
 
 ```{r, echo=FALSE, results='hide'}
-if (!file.exists(fn <- "data/predLC.tif")) {
+if (!file.exists(fn <- "output/predLC.tif")) {
   predLC <- predict(covs, modelRF, fun = function(...) predict(...)$predictions, filename = fn)
 } else {
   predLC <- rast(fn)
@@ -364,7 +371,7 @@ This function arbitrarily assigns an ID to these patches.
 
 ```{r, results='hide', fig.show='hide'}
 # Group raster cells into patches based on the Queen's Case
-if(!file.exists(fn <- "data/clumformask.tif")) {
+if(!file.exists(fn <- "output/clumformask.tif")) {
   forestpatches <- patches(formask, directions = 8, filename = fn)
 } else {
   forestpatches <- rast(fn)
