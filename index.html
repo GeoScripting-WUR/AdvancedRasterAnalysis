@@ -1283,7 +1283,7 @@ for example, to construct a forest mask for the year 2020.</p>
 <span class="glyphicon glyphicon-chevron-down"></span> R source
 </button>
 <pre style=""><code class="source r"># Download training polygons
-download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/raw/gh-pages/data/trainingPoly.csv", "data/trainingPoly.csv")
+download.file("https://github.com/GeoScripting-WUR/AdvancedRasterAnalysis/releases/download/advrast-data/trainingPoly.csv", "data/trainingPoly.csv")
 
 # Load the training polygons from a csv file using st_read:
 trainingPoly <- st_read("data/trainingPoly.csv")</code></pre>
@@ -2003,9 +2003,14 @@ plot(forest, col = "dark green", legend = FALSE)</code></pre>
 </div>
 <h1 id="todays-summary">Today’s summary</h1>
 <p>We learned about:</p>
-<pre><code>- performing a supervised classification using R scripts
-- identifying patches and sieve connected cells within a raster
-- dealing with thematic (i.e. categorical raster data) by assigning raster attribute tables.&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
+<ul>
+<li>performing a supervised classification using R scripts</li>
+<li>identifying patches and sieve connected cells within a raster</li>
+<li>dealing with thematic (i.e. categorical raster data) by assigning
+raster attribute tables
+</div>
+</div>
+</div>
 <div id="push">
 
 </div>
@@ -2018,6 +2023,7 @@ Styled with
 </div>
 </div>
 <link rel="stylesheet" id="theme" href="https://netdna.bootstrapcdn.com/bootswatch/3.0.0/simplex/bootstrap.min.css" media="screen"></link><link rel="stylesheet" id="highlight" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/7.3/styles/tomorrow-night-bright.min.css" media="screen"></link>
-</div>
+</div></li>
+</ul>
 </body>
 </html>
