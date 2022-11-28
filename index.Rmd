@@ -27,7 +27,7 @@ opts_chunk$set(fig.width = 12, fig.align = 'center', fig.height = 8, dpi = 72)
 # Week 2, Tutorial 6: Advanced Raster Analysis
 
 ## Learning objectives
-* Carry out a supervised classification on a series of raster layers
+* Carry out a supervised classification on a SpatRaster
 * Construct a raster sieve using the `patches()` function
 * Deal with thematic (categorical maps)
 
@@ -46,20 +46,20 @@ After downloading the data we begin with visualization. The data consists of all
 
 ```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
 # Check for packages and install if missing
-if(!"terra" %in% rownames(installed.packages())){install.packages("terra")}
-if(!"sf" %in% rownames(installed.packages())){install.packages("sf")}
-if(!"ranger" %in% rownames(installed.packages())){install.packages("ranger")}
+if(!"terra" %in% installed.packages()){install.packages("terra")}
+if(!"sf" %in% installed.packages()){install.packages("sf")}
+if(!"ranger" %in% installed.packages()){install.packages("ranger")}
 
 library(terra)
 library(sf)
 library(ranger)
 
-# Create data folder,
+# Create data directory,
 if (!dir.exists("data")) {
   dir.create("data")
 }
 
-# Create output folder
+# Create output directory
 if (!dir.exists("output")) {
   dir.create("output")
 }
@@ -94,7 +94,7 @@ hist(Gewata, maxpixels = 1000)
 
 Note that the values of these bands have been rescaled by a factor of 10,000. This is done for file storage considerations. For example, a value of 0.5643 stored as a float takes up more disk space than a value of 5643 stored as an integer. If you prefer reflectance values in their original scale (from 0 to 1), this can easily be done using raster algebra or `app()`. We will do this later.
 
-A scatterplot matrix can be helpful in exploring relationships between raster layers. This can be done with the `pairs()` function of the terra package, which (like `hist()`) is a wrapper for the same function found in the `graphics` packages.
+A scatterplot matrix can be helpful in exploring relationships between the layers in a SpatRaster. This can be done with the `pairs()` function of the terra package, which (like `hist()`) is a wrapper for the same function found in the `graphics` packages.
 
 ```{r, fig.width=12, fig.height=10}
 pairs(Gewata, maxpixels = 1000)
@@ -151,7 +151,7 @@ covs <- c(gewata, ndvi)
 plot(covs)
 ```
 
-You'll notice that we didn't give our NDVI layer a name yet, and it automatically copied over the layer name `B8A` as a result. It's good to make sure that the raster layer names make sense, so you don't forget which band is which later on. Let's change all the layer names (**make sure you get the order right!**).
+You'll notice that we didn't give our NDVI layer a name yet, and it automatically copied over the layer name `B8A` as a result. It's good to make sure that the SpatRaster names make sense, so you don't forget which band is which later on. Let's change all the layer names (**make sure you get the order right!**).
 
 ```{r}
 names(covs) <- c(names(Gewata), "NDVI")
@@ -314,7 +314,7 @@ Since the NDVI layer scores relatively low according to the mean accuracy decrea
 > **Question 4**: What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What effect does leaving this variable out have on the processing time (hint: use `system.time()`)?
 ```
 
-Now we apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the raster layers in the input brick (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `raster` package. This function uses a pre-defined model to predict values of raster cells based on other raster layers. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `ranger()` function.
+Now we apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the layers in the input SpatRaster (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `terra` package. This function uses a pre-defined model to predict values of raster cells based on a SpatRaster. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `ranger()` function.
 
 ```{r, echo=FALSE, results='hide'}
 if (!file.exists(fn <- "output/predLC.tif")) {
@@ -366,8 +366,7 @@ For some applications, we may only be interested in larger forest areas. We may 
 
 In this section, we will construct 2 types of sieves to remove these types of pixels, following 2 definitions of *adjacency*. In the first approach, the so-called *Queen's Case*, neighbours in all 8 directions are considered to be adjacent. If any pixel cell has no neighbours in any of these 8 directions, we will remove that pixel by assigning an `NA` value.
 
-First, we will use the `patches()` function in the raster package to identify patches of raster cells.
-This function arbitrarily assigns an ID to these patches.
+First, we will use the `patches()` function in the terra package to identify patches of raster cells. This function arbitrarily assigns an ID to these patches.
 
 ```{r, results='hide', fig.show='hide'}
 # Group raster cells into patches based on the Queen's Case
@@ -487,7 +486,7 @@ levels(lulc) <- LUTGewata
 lulc
 ```
 
-In some cases it might be more useful to visualize only one class at a time. The `segregate()` function in the raster package does this by producing a `SpatRaster` object with each layer representing the class membership of each class as a boolean.
+In some cases it might be more useful to visualize only one class at a time. The `segregate()` function in the terra package does this by producing a `SpatRaster` object with each layer representing the class membership of each class as a boolean.
 
 ```{r, warning=FALSE}
 classes <- segregate(lulc)
@@ -517,7 +516,7 @@ plot(forest, col = "dark green", legend = FALSE)
 # Today's summary
 
 We learned about:
-    - performing a supervised classification using R scripts
-    - identifying patches and sieve connected cells within a raster
-    - dealing with thematic (i.e. categorical raster data) by assigning raster attribute tables.
 
+- performing a supervised classification using R scripts
+- identifying patches and sieve connected cells within a raster
+- dealing with thematic (i.e. categorical raster data) by assigning raster attribute tables

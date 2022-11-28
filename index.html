@@ -1036,8 +1036,7 @@ href="https://geoscripting-wur.github.io/">WUR Geoscripting</a>
 Advanced Raster Analysis</h1>
 <h2 id="learning-objectives">Learning objectives</h2>
 <ul>
-<li>Carry out a supervised classification on a series of raster
-layers</li>
+<li>Carry out a supervised classification on a SpatRaster</li>
 <li>Construct a raster sieve using the <code>patches()</code>
 function</li>
 <li>Deal with thematic (categorical maps)</li>
@@ -1066,20 +1065,20 @@ classification, which will be introduced later.</p>
 <span class="glyphicon glyphicon-chevron-down"></span> R source
 </button>
 <pre style=""><code class="source r"># Check for packages and install if missing
-if(!"terra" %in% rownames(installed.packages())){install.packages("terra")}
-if(!"sf" %in% rownames(installed.packages())){install.packages("sf")}
-if(!"ranger" %in% rownames(installed.packages())){install.packages("ranger")}
+if(!"terra" %in% installed.packages()){install.packages("terra")}
+if(!"sf" %in% installed.packages()){install.packages("sf")}
+if(!"ranger" %in% installed.packages()){install.packages("ranger")}
 
 library(terra)
 library(sf)
 library(ranger)
 
-# Create data folder,
+# Create data directory,
 if (!dir.exists("data")) {
   dir.create("data")
 }
 
-# Create output folder
+# Create output directory
 if (!dir.exists("output")) {
   dir.create("output")
 }
@@ -1123,10 +1122,10 @@ of 5643 stored as an integer. If you prefer reflectance values in their
 original scale (from 0 to 1), this can easily be done using raster
 algebra or <code>app()</code>. We will do this later.</p>
 <p>A scatterplot matrix can be helpful in exploring relationships
-between raster layers. This can be done with the <code>pairs()</code>
-function of the terra package, which (like <code>hist()</code>) is a
-wrapper for the same function found in the <code>graphics</code>
-packages.</p>
+between the layers in a SpatRaster. This can be done with the
+<code>pairs()</code> function of the terra package, which (like
+<code>hist()</code>) is a wrapper for the same function found in the
+<code>graphics</code> packages.</p>
 <div class="row">
 <button class="source R toggle btn btn-xs btn-primary">
 <span class="glyphicon glyphicon-chevron-down"></span> R source
@@ -1258,7 +1257,7 @@ plot(covs)</code></pre>
 </div>
 <p>You’ll notice that we didn’t give our NDVI layer a name yet, and it
 automatically copied over the layer name <code>B8A</code> as a result.
-It’s good to make sure that the raster layer names make sense, so you
+It’s good to make sure that the SpatRaster names make sense, so you
 don’t forget which band is which later on. Let’s change all the layer
 names (<strong>make sure you get the order right!</strong>).</p>
 <div class="row">
@@ -1667,14 +1666,14 @@ have on the processing time (hint: use <code>system.time()</code>)?
 </div>
 </div>
 <p>Now we apply this model to the rest of the image and assign classes
-to all pixels. Note that for this step, the names of the raster layers
-in the input brick (here <code>covs</code>) must correspond exactly to
-the column names of the training table. We will use the
-<code>predict()</code> function from the <code>raster</code> package.
+to all pixels. Note that for this step, the names of the layers in the
+input SpatRaster (here <code>covs</code>) must correspond exactly to the
+column names of the training table. We will use the
+<code>predict()</code> function from the <code>terra</code> package.
 This function uses a pre-defined model to predict values of raster cells
-based on other raster layers. This model can be derived by a linear
-regression, for example. In our case, we will use the model provided by
-the <code>ranger()</code> function.</p>
+based on a SpatRaster. This model can be derived by a linear regression,
+for example. In our case, we will use the model provided by the
+<code>ranger()</code> function.</p>
 <div class="row">
 
 </div>
@@ -1767,7 +1766,7 @@ first approach, the so-called <em>Queen’s Case</em>, neighbours in all 8
 directions are considered to be adjacent. If any pixel cell has no
 neighbours in any of these 8 directions, we will remove that pixel by
 assigning an <code>NA</code> value.</p>
-<p>First, we will use the <code>patches()</code> function in the raster
+<p>First, we will use the <code>patches()</code> function in the terra
 package to identify patches of raster cells. This function arbitrarily
 assigns an ID to these patches.</p>
 <div class="row">
@@ -1958,7 +1957,7 @@ lulc</code></pre>
 </code></pre>
 </div>
 <p>In some cases it might be more useful to visualize only one class at
-a time. The <code>segregate()</code> function in the raster package does
+a time. The <code>segregate()</code> function in the terra package does
 this by producing a <code>SpatRaster</code> object with each layer
 representing the class membership of each class as a boolean.</p>
 <div class="row">
@@ -2003,13 +2002,10 @@ plot(forest, col = "dark green", legend = FALSE)</code></pre>
 </div>
 </div>
 <h1 id="todays-summary">Today’s summary</h1>
-<p>We learned about: - performing a supervised classification using R
-scripts - identifying patches and sieve connected cells within a raster
-- dealing with thematic (i.e. categorical raster data) by assigning
-raster attribute tables.</p>
-</div>
-</div>
-</div>
+<p>We learned about:</p>
+<pre><code>- performing a supervised classification using R scripts
+- identifying patches and sieve connected cells within a raster
+- dealing with thematic (i.e. categorical raster data) by assigning raster attribute tables.&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;</code></pre>
 <div id="push">
 
 </div>
