@@ -1046,7 +1046,7 @@ function</li>
 Sentinel-2 data used here</h2>
 <p>We will carry out a supervised classification using Sentinel 2 data
 for the Gewata region in Ethiopia. To do this, we use atmospherically
-corrected Level 2A data acquired on December 27 2020. This data was
+corrected Level 2A data acquired on December 27 2020. These data were
 downloaded from ESA’s online data hub
 (https://scihub.copernicus.eu/dhus), a part of the Copernicus European
 Programme. As it is freely available, Sentinel data has been commonly
@@ -1146,7 +1146,7 @@ potential correlations between the layers themselves. In the case of
 bands of the Gewata subset, we can see that band 3 and 5 (in the visual
 part of the EM spectrum) and bands 6 and 7 (in the near infrared part of
 the EM spectrum) are highly correlated. Similar correlation also exist
-between band 11 and 12. Band 8a however contains significant
+between band 11 and 12. However, Band 8a contains significant
 non-redundant information.</p>
 <div class="row">
 <div class="alert alert-success">
@@ -1180,7 +1180,7 @@ plot(ndvi)</code></pre>
 usage, an additional advantage of this function is the fact that the
 result can be written immediately to the file by including the
 <code>filename = "..."</code> argument, which will allow you to write
-your results to file immediately, after which you can reload in
+your results to file immediately, after which you can reload it in
 subsequent sessions without having to repeat your analysis.</p>
 <div class="row">
 <div class="alert alert-success">
@@ -1251,7 +1251,7 @@ integer scale, but we won’t go into more detail about that here.)</p>
 <pre style=""><code class="source r"># Rescale to original scale
 gewata <- app(Gewata, fun = function(x) x / 10000)
 
-# Make a new SpatRaster by combining the Gewata and NDVI Spatrasters
+# Make a new SpatRaster by combining the Gewata and NDVI SpatRasters
 covs <- c(gewata, ndvi)
 plot(covs)</code></pre>
 </div>
@@ -1566,13 +1566,14 @@ we will use the <code>ranger</code> package in R. There is also
 <code>ranger</code> is is implemented in C++ with multithreading and
 thus is much faster. Using the <code>ranger()</code> function, we will
 build a model based on a matrix of predictors or covariates (ie. the
-first 10 columns of valuetable) related to the response (the
-<code>Class</code> column of valuetable).</p>
+first 10 columns of <code>trainingData</code>) related to the response
+(the <code>Class</code> column of <code>trainingData</code>).</p>
 <h3 id="construct-a-random-forest-model.">Construct a random forest
 model.</h3>
-<p>Covariates (x) are found in columns 1 to 10 of valuetable. Training
-classes (y) are found in the ‘class’ column of valuetable. <em>Caution:
-this step takes fairly long!</em> but can be shortened by setting
+<p>Covariates (x) are found in columns 1 to 10 of
+<code>trainingData</code>. Training classes (y) are found in the ‘Class’
+column of <code>trainingData</code>. <em>Caution: this step takes fairly
+long!</em> but can be shortened by setting
 <code>importance = FALSE</code>.</p>
 <div class="row">
 <button class="source R toggle btn btn-xs btn-primary">
@@ -1783,7 +1784,7 @@ if(!file.exists(fn <- "output/clumformask.tif")) {
 plot(forestpatches, col = topo.colors(nrow(forestpatches)))</code></pre>
 </div>
 <p>When we inspect the frequency table with <code>freq()</code>, we can
-see the number of raster cells included in each of these clump IDs.</p>
+see the number of raster cells included in each of these patch IDs.</p>
 <div class="row">
 <button class="source R toggle btn btn-xs btn-primary">
 <span class="glyphicon glyphicon-chevron-down"></span> R source
@@ -1796,7 +1797,7 @@ head(patchFreq)
 tail(patchFreq)</code></pre>
 </div>
 <p>We can use the <code>count</code> column of this frequency table to
-select clump <code>ID</code>s with only 1 pixel - these are the pixel
+select patch <code>ID</code>s with only 1 pixel - these are the pixel
 “islands” that we want to remove from our original forest mask.</p>
 <div class="row">
 <button class="source R toggle btn btn-xs btn-primary">
@@ -1808,13 +1809,13 @@ str(which(patchFreq$count == 1))
 # Which values do these correspond to?
 str(patchFreq$value[which(patchFreq$count == 1)])
 
-# Put these into a vector of clump ID's to be removed
+# Put these into a vector of patch ID's to be removed
 excludeID <- patchFreq$value[which(patchFreq$count == 1)]
 
 # Make a new forest mask to be sieved
 formaskSieve <- formask
 
-# Assign NA to all clumps whose IDs are found in excludeID
+# Assign NA to all patches whose IDs are found in excludeID
 formaskSieve[forestpatches %in% excludeID] <- NA
 
 ## Zoom in to a small extent to check the results
@@ -1835,7 +1836,7 @@ plot(formaskSieve, ext = e, col="dark green", legend = FALSE, main = 'formaskSie
 par(mfrow = c(1, 1)) </code></pre>
 </div>
 <p>We have successfully removed all <em>island</em> pixels from the
-forest mask using the <code>clump()</code> function. We can adjust our
+forest mask using the <code>patches()</code> function. We can adjust our
 sieve criteria to only directly adjacent (NESW) neighbours: the
 so-called <em>Rook’s Case</em>. To accomplish this, simply repeat the
 code above, but supply the argument <code>directions = 4</code> when
@@ -1847,9 +1848,10 @@ calling <code>patches()</code>.</p>
 <blockquote>
 <p>
 <strong>Question 5:</strong> How could you adjust the above sieve to
-remove all forest pixels with area below 0.5 hectaresif you are using
-Landsat satellite data? Consider the fact that Landsat pixels are 30m by
-30m, and that one hectare is equal to 10000m<sup>2</sup>.
+remove all forest pixels with an area below 0.5 hectares? Consider the
+fact that the pixels in <code>formask</code> are 20m by 20m (see
+<code>res(formask)</code>), and that one hectare is equal to
+10000m<sup>2</sup>.
 </p>
 </blockquote>
 </div>
@@ -1938,7 +1940,7 @@ raster attribute table.</p>
 <pre style=""><code class="source r"># Set SpatRaster to categorical
 lulc <- as.factor(lulcGewata)
 
-# Assign a raster attribute table (RAT)
+# Assign category names to the raster values
 levels(lulc) <- LUTGewata
 lulc</code></pre>
 <button class="output R toggle btn btn-xs btn-success">
@@ -2006,8 +2008,7 @@ plot(forest, col = "dark green", legend = FALSE)</code></pre>
 <ul>
 <li>performing a supervised classification using R scripts</li>
 <li>identifying patches and sieve connected cells within a raster</li>
-<li>dealing with thematic (i.e. categorical raster data) by assigning
-raster attribute tables
+<li>dealing with thematic (i.e. categorical) raster data
 </div>
 </div>
 </div>

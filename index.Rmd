@@ -35,7 +35,7 @@ opts_chunk$set(fig.width = 12, fig.align = 'center', fig.height = 8, dpi = 72)
 
 ## Introduction to Sentinel-2 data used here
 
-We will carry out a supervised classification using Sentinel 2 data for the Gewata region in Ethiopia. To do this, we use atmospherically corrected Level 2A data acquired on December 27 2020. This data was downloaded from ESA's online data hub (https://scihub.copernicus.eu/dhus), a part of the Copernicus European Programme. As it is freely available, Sentinel data has been commonly used next to Landsat data for environmental monitoring.
+We will carry out a supervised classification using Sentinel 2 data for the Gewata region in Ethiopia. To do this, we use atmospherically corrected Level 2A data acquired on December 27 2020. These data were downloaded from ESA's online data hub (https://scihub.copernicus.eu/dhus), a part of the Copernicus European Programme. As it is freely available, Sentinel data has been commonly used next to Landsat data for environmental monitoring.
 ![Sentinel bands in comparison to Lansat bands ](figs/Landsat.v.Sentinel-2.jpg)
 
 ## Data exploration
@@ -102,7 +102,7 @@ pairs(Gewata, maxpixels = 1000)
 
 Note that both `hist()` and `pairs()` compute histograms and scatterplots based on a random sample of raster pixels. The size of this sample can be changed with the argument `maxpixels`.
 
-Calling `pairs()` on a `SpatRaster` reveals potential correlations between the layers themselves. In the case of bands of the Gewata subset, we can see that band 3 and 5 (in the visual part of the EM spectrum) and bands 6 and 7 (in the near infrared part of the EM spectrum) are highly correlated. Similar correlation also exist between band 11 and 12. Band 8a however contains significant non-redundant information.
+Calling `pairs()` on a `SpatRaster` reveals potential correlations between the layers themselves. In the case of bands of the Gewata subset, we can see that band 3 and 5 (in the visual part of the EM spectrum) and bands 6 and 7 (in the near infrared part of the EM spectrum) are highly correlated. Similar correlation also exist between band 11 and 12. However, Band 8a contains significant non-redundant information.
 
 ```{block, type="alert alert-success"}
 > **Question 1**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
@@ -116,7 +116,7 @@ ndvi <- app(c(Gewata$B8A, Gewata$B04), fun = function(x){(x[1] - x[2]) / (x[1] +
 plot(ndvi)
 ```
 
-Aside from the advantages of `app()` regarding memory usage, an additional advantage of this function is the fact that the result can be written immediately to the file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload in subsequent sessions without having to repeat your analysis.
+Aside from the advantages of `app()` regarding memory usage, an additional advantage of this function is the fact that the result can be written immediately to the file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload it in subsequent sessions without having to repeat your analysis.
 
 ```{block, type="alert alert-success"}
 > **Question 2**: What is the advantage of including the NDVI layer in the classification?
@@ -146,7 +146,7 @@ First, let's rescale the original reflectance values to their original scale. Th
 # Rescale to original scale
 gewata <- app(Gewata, fun = function(x) x / 10000)
 
-# Make a new SpatRaster by combining the Gewata and NDVI Spatrasters
+# Make a new SpatRaster by combining the Gewata and NDVI SpatRasters
 covs <- c(gewata, ndvi)
 plot(covs)
 ```
@@ -265,13 +265,13 @@ We can see from these distributions that these covariates may do well in classif
 
 ### Run Random Forest classification
 We build the Random Forest model using the training data. For this, we will use the `ranger` package in R. There is also `randomForest` package available in R. However, `ranger` is is implemented in C++ with multithreading and thus is much faster. 
-Using the `ranger()` function, we will build a model based on a matrix of predictors or covariates (ie. the first 10 columns of valuetable) related to the response (the `Class` column of valuetable).
+Using the `ranger()` function, we will build a model based on a matrix of predictors or covariates (ie. the first 10 columns of `trainingData`) related to the response (the `Class` column of `trainingData`).
 
 ### Construct a random forest model. 
 
-Covariates (x) are found in columns 1 to 10 of valuetable. Training classes (y) are found in the 'class' column of valuetable. *Caution: this step takes fairly long!* but can be shortened by setting `importance = FALSE`.
+Covariates (x) are found in columns 1 to 10 of `trainingData`. Training classes (y) are found in the 'Class' column of `trainingData`. *Caution: this step takes fairly long!* but can be shortened by setting `importance = FALSE`.
 
-```{r, results='hide'}
+```{r, results='hide', cache=TRUE}
 library(ranger)
 
 modelRF <- ranger(x = trainingData[, 1:ncol(trainingData)-1], y = trainingData$Class,
@@ -379,7 +379,7 @@ if(!file.exists(fn <- "output/clumformask.tif")) {
 plot(forestpatches, col = topo.colors(nrow(forestpatches)))
 ```
 
-When we inspect the frequency table with `freq()`, we can see the number of raster cells included in each of these clump IDs.
+When we inspect the frequency table with `freq()`, we can see the number of raster cells included in each of these patch IDs.
 
 ```{r, fig.show='hide', results='hide'}
 # Assign frequency table (to a dataframe)
@@ -390,7 +390,7 @@ head(patchFreq)
 tail(patchFreq)
 ```
 
-We can use the `count` column of this frequency table to select clump `ID`s with only 1 pixel - these are the pixel "islands" that we want to remove from our original forest mask.
+We can use the `count` column of this frequency table to select patch `ID`s with only 1 pixel - these are the pixel "islands" that we want to remove from our original forest mask.
 
 ```{r, results='hide', fig.lp="Zoom of a forest mask before (left) and after (right) application of a sieve using the Queen's Case condition.", fig.width=10, dpi=72}
 # Which rows of the data.frame are only represented by one cell?
@@ -399,13 +399,13 @@ str(which(patchFreq$count == 1))
 # Which values do these correspond to?
 str(patchFreq$value[which(patchFreq$count == 1)])
 
-# Put these into a vector of clump ID's to be removed
+# Put these into a vector of patch ID's to be removed
 excludeID <- patchFreq$value[which(patchFreq$count == 1)]
 
 # Make a new forest mask to be sieved
 formaskSieve <- formask
 
-# Assign NA to all clumps whose IDs are found in excludeID
+# Assign NA to all patches whose IDs are found in excludeID
 formaskSieve[forestpatches %in% excludeID] <- NA
 
 ## Zoom in to a small extent to check the results
@@ -419,10 +419,10 @@ plot(formaskSieve, ext = e, col="dark green", legend = FALSE, main = 'formaskSie
 par(mfrow = c(1, 1)) 
 ```
 
-We have successfully removed all *island* pixels from the forest mask using the `clump()` function. We can adjust our sieve criteria to only directly adjacent (NESW) neighbours: the so-called *Rook's Case*. To accomplish this, simply repeat the code above, but supply the argument `directions = 4` when calling `patches()`.
+We have successfully removed all *island* pixels from the forest mask using the `patches()` function. We can adjust our sieve criteria to only directly adjacent (NESW) neighbours: the so-called *Rook's Case*. To accomplish this, simply repeat the code above, but supply the argument `directions = 4` when calling `patches()`.
 
 ```{r, eval=FALSE, echo=FALSE, results='hide', include=FALSE}
-# Group raster cells into clumps based on the Rook's Case
+# Group raster cells into patches based on the Rook's Case
 forestpatches <- patches(formask, directions = 4)
 patchFreq <- freq(forestpatches)
 
@@ -448,7 +448,7 @@ par(mfrow = c(1, 1))
 We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask.
 
 ```{block, type="alert alert-success"}
-> **Question 5:** How could you adjust the above sieve to remove all forest pixels with area below 0.5 hectaresif you are using Landsat satellite data? Consider the fact that Landsat pixels are 30m by 30m, and that one hectare is equal to 10000m<sup>2</sup>.
+> **Question 5:** How could you adjust the above sieve to remove all forest pixels with an area below 0.5 hectares? Consider the fact that the pixels in `formask` are 20m by 20m (see `res(formask)`), and that one hectare is equal to 10000m<sup>2</sup>.
 ```
 
 ## Working with thematic rasters
@@ -481,7 +481,7 @@ This `data.frame` represents a lookup table for the raster we just loaded. The `
 # Set SpatRaster to categorical
 lulc <- as.factor(lulcGewata)
 
-# Assign a raster attribute table (RAT)
+# Assign category names to the raster values
 levels(lulc) <- LUTGewata
 lulc
 ```
@@ -519,4 +519,4 @@ We learned about:
 
 - performing a supervised classification using R scripts
 - identifying patches and sieve connected cells within a raster
-- dealing with thematic (i.e. categorical raster data) by assigning raster attribute tables
+- dealing with thematic (i.e. categorical) raster data
