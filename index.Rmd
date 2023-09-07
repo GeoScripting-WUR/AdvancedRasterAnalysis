@@ -1,5 +1,5 @@
 ---
-pagetitle: "Tutorial 6: Advanced Raster Analysis"
+pagetitle: "Advanced Raster Analysis"
 author: "Ben Devries, Jan Verbesselt, Loïc Dutrieux, Dainius Masiliūnas, Astrid Bos, Nandika Tsendbazar"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
 output:
@@ -30,7 +30,7 @@ library(knitr)
 opts_chunk$set(fig.width = 12, fig.align = 'center', fig.height = 8, dpi = 72)
 ```
 
-# Week 2, Tutorial 6: Advanced Raster Analysis
+# Advanced Raster Analysis
 
 ## Learning objectives
 * Carry out a supervised classification on a SpatRaster
@@ -41,14 +41,14 @@ opts_chunk$set(fig.width = 12, fig.align = 'center', fig.height = 8, dpi = 72)
 
 ## Introduction to Sentinel-2 data used here
 
-We will carry out a supervised classification using Sentinel 2 data for the Gewata region in Ethiopia. To do this, we use atmospherically corrected Level 2A data acquired on December 27 2020. These data were downloaded from ESA's online data hub (https://scihub.copernicus.eu/dhus), a part of the Copernicus European Programme. As it is freely available, Sentinel data has been commonly used next to Landsat data for environmental monitoring.
+We will carry out a supervised classification using Sentinel 2 data for the Gewata region in Ethiopia. To do this, we use atmospherically corrected Level 2A data acquired on December 27, 2020. These data were downloaded from [ESA's online data hub](https://scihub.copernicus.eu/dhus), a part of the Copernicus European Programme. As it is freely available, Sentinel data has been commonly used next to Landsat data for environmental monitoring.
 ![Sentinel bands in comparison to Lansat bands ](figs/Landsat.v.Sentinel-2.jpg)
 
 ## Data exploration
 
 Download the data to your computer and open your preferred R IDE to the directory of this tutorial.
 
-After downloading the data we begin with visualization. The data consists of all the Sentinel 2 bands at a spatial resolution of 20 m. We will also make use of training polygons for the land cover classification, which will be introduced later. 
+After downloading the data we begin with visualization. The data consists of all the Sentinel-2 bands at a spatial resolution (or pixel size) of 20 m, meaning that each pixel on the scene corresponds to a ground distance of 20 m by 20 m. We will also make use of training polygons for the land cover classification, which will be introduced later. 
 
 ```{r, message=FALSE, include=TRUE, results='hide', warning=FALSE}
 # Check for packages and install if missing
@@ -100,7 +100,7 @@ hist(Gewata, maxpixels = 1000)
 
 Note that the values of these bands have been rescaled by a factor of 10,000. This is done for file storage considerations. For example, a value of 0.5643 stored as a float takes up more disk space than a value of 5643 stored as an integer. If you prefer reflectance values in their original scale (from 0 to 1), this can easily be done using raster algebra or `app()`. We will do this later.
 
-A scatterplot matrix can be helpful in exploring relationships between the layers in a SpatRaster. This can be done with the `pairs()` function of the terra package, which (like `hist()`) is a wrapper for the same function found in the `graphics` packages.
+A scatterplot matrix can be helpful in exploring relationships between the layers in a `SpatRaster`. This can be done with the `pairs()` function of the terra package, which (like `hist()`) is a wrapper for the same function found in the `graphics` packages.
 
 ```{r, fig.width=12, fig.height=10}
 pairs(Gewata, maxpixels = 1000)
@@ -108,13 +108,13 @@ pairs(Gewata, maxpixels = 1000)
 
 Note that both `hist()` and `pairs()` compute histograms and scatterplots based on a random sample of raster pixels. The size of this sample can be changed with the argument `maxpixels`.
 
-Calling `pairs()` on a `SpatRaster` reveals potential correlations between the layers themselves. In the case of bands of the Gewata subset, we can see that band 3 and 5 (in the visual part of the EM spectrum) and bands 6 and 7 (in the near infrared part of the EM spectrum) are highly correlated. Similar correlation also exist between band 11 and 12. However, Band 8a contains significant non-redundant information.
+Calling `pairs()` on a `SpatRaster` reveals potential correlations between the layers themselves, that give an indication of which information may be redundant. 
 
 ```{block, type="alert alert-success"}
-> **Question 1**: Given what we know about the location of these bands along the EM spectrum, how could these scatterplots be explained?
+> **Question 1**: In the case of the bands of the Gewata subset, list two pairs of bands that contain redundant information and two bands that have significant non-redundant information. 
 ```
 
-In the previous tutorial, we explored two ways to calculate NDVI, using direct raster algebra or using `app()`. Since we will be using NDVI again later in this tutorial, let's calculate it again and store it in our workspace using `app()`.
+In the [previous tutorial](../IntroToRaster/index.html#subsetting-layers-from-spatraster), we explored two ways to calculate NDVI, using direct raster algebra or using `app()`. Since we will be using NDVI again later in this tutorial, let's calculate it again and store it in our workspace using `app()`.
 
 ```{r}
 par(mfrow = c(1, 1)) # reset plotting window
@@ -125,7 +125,7 @@ plot(ndvi)
 Aside from the advantages of `app()` regarding memory usage, an additional advantage of this function is the fact that the result can be written immediately to the file by including the `filename = "..."` argument, which will allow you to write your results to file immediately, after which you can reload it in subsequent sessions without having to repeat your analysis.
 
 ```{block, type="alert alert-success"}
-> **Question 2**: What is the advantage of including the NDVI layer in the classification?
+> **Question 2**: What is the advantage of including the NDVI layer in the land cover classification? Hint: For information on NDVI, check out [this source](https://gisgeography.com/ndvi-normalized-difference-vegetation-index/). 
 ```
 
 ## Classifying raster data
@@ -275,12 +275,12 @@ Using the `ranger()` function, we will build a model based on a matrix of predic
 
 ### Construct a random forest model. 
 
-Covariates (x) are found in columns 1 to 10 of `trainingData`. Training classes (y) are found in the 'Class' column of `trainingData`. *Caution: this step takes fairly long!* but can be shortened by setting `importance = FALSE`.
+Covariates (x) are found in columns 1 to 10 of `trainingData`. Training classes (y) are found in the 'Class' column of `trainingData`. *Caution: this step takes fairly long!* but can be shortened by limiting the number of trees to 100 and by setting `importance = FALSE`.
 
 ```{r, results='hide', cache=TRUE}
 library(ranger)
 
-modelRF <- ranger(x = trainingData[, 1:ncol(trainingData)-1], y = trainingData$Class,
+modelRF <- ranger(x = trainingData[, 1:ncol(trainingData)-1], y = trainingData$Class, num.trees = 100,
                   importance = "permutation", seed = 0xfedbeef)
 ```
 
@@ -299,8 +299,20 @@ class(modelRF)
 str(modelRF)
 names(modelRF)
 
+# Inspect the prediction error
+modelRF$prediction.error
+
+# Calculate the overall accuracy
+1 - modelRF$prediction.error
+
 # Inspect the confusion matrix of the OOB error assessment
 modelRF$confusion.matrix
+```
+
+The overall accuracy and the confusion matrix are often used to evaluate the results of a supervised classification. However, the confusion matrix can provide more detailed information by giving per-class accuracies.
+
+```{block, type="alert alert-info"}
+**Note**: If you wish to learn how to read a confusion matrix, check out this [tutorial](https://www.evidentlyai.com/classification-metrics/confusion-matrix).
 ```
 
 Earlier we provided a brief explanation of OOB error, though it can be a valuable metric for evaluating your model, it can overestimate the true prediction error depending on the parameters presents in the model.
@@ -317,7 +329,11 @@ The mean decrease in accuracy indicates the amount by which the classification a
 Since the NDVI layer scores relatively low according to the mean accuracy decrease criterion, try to construct an alternate Random Forest model as above, but excluding this layer, you can name it something like 'modelRF2'.
 
 ```{block, type="alert alert-success"}
-> **Question 4**: What effect does this have on the overall accuracy of the results (hint: compare the confusion matrices of the original and new outputs). What effect does leaving this variable out have on the processing time (hint: use `system.time()`)?
+> **Question 4**: What effect does this have on the accuracy of the results? Hint: Compare the overall accuracies (or the confusion matrices) of the original and new outputs.
+```
+
+```{block, type="alert alert-success"}
+> **Question 5**: What effect does leaving this variable out have on the processing time? Hint: Use `system.time()`.
 ```
 
 Now we apply this model to the rest of the image and assign classes to all pixels. Note that for this step, the names of the layers in the input SpatRaster (here `covs`) must correspond exactly to the column names of the training table. We will use the `predict()` function from the `terra` package. This function uses a pre-defined model to predict values of raster cells based on a SpatRaster. This model can be derived by a linear regression, for example. In our case, we will use the model provided by the `ranger()` function.
@@ -454,7 +470,7 @@ par(mfrow = c(1, 1))
 We could take this approach further and apply a minimum mapping unit (MMU) to our forest mask.
 
 ```{block, type="alert alert-success"}
-> **Question 5:** How could you adjust the above sieve to remove all forest pixels with an area below 0.5 hectares? Consider the fact that the pixels in `formask` are 20m by 20m (see `res(formask)`), and that one hectare is equal to 10000m<sup>2</sup>.
+> **Question 6:** How could you adjust the above sieve to remove all forest pixels with an area below 0.5 hectares? Consider the fact that the pixels in `formask` are 20m by 20m (see `res(formask)`), and that one hectare is equal to 10000m<sup>2</sup>.
 ```
 
 ## Working with thematic rasters
@@ -521,8 +537,32 @@ plot(forest, col = "dark green", legend = FALSE)
 
 # Today's summary
 
-We learned about:
+Today you performed a supervised classification, you identified patches and sieve connected cells, and you learned to deal with thematic raster data. Some functions to remember: 
 
-- performing a supervised classification using R scripts
-- identifying patches and sieve connected cells within a raster
-- dealing with thematic (i.e. categorical) raster data
+## Data exploration 
+
+* `hist()`: Create a histogram for each layer of a `SpatRaster`.
+* `pairs()`: Create a scatterplot for each pair of layers of a `SpatRaster`. 
+* `app()`: Apply a (custom) function to all pixels of a `SpatRaster` more efficiently. 
+
+## Training data preparation 
+
+* `extract()`: Retrieve a value for the raster below a vector (polygon, line, or point).
+
+## Contruct a Random Forest model
+
+* `ranger()`: Build a Random Forest model based on a data frame of predictors and a response variable. `importance = "permutation"` and `importance()` to get the statistical importance of each predictor. 
+
+## Run a model on the data
+
+* `predict()`: Predict raster values based on a trained model. 
+
+## Applying a raster sieve by identifying patches 
+
+* `setValues()`: Set all values of a raster to a certain value or certain values. This is equivalent to `MySpatRaster[] = MyValue`.
+* `patches()`: Identify patches of raster cells and attribute an ID to each. Specify neighbors with `direction = 4`or `direction = 8`. 
+* `freq()`: Count the number of raster cells per ID. 
+
+## Working with thematic rasters
+
+* `segregate()`: Create a `SpatRaster` object for each layer or class. 
