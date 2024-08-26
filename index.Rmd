@@ -157,7 +157,7 @@ covs <- c(gewata, ndvi)
 plot(covs)
 ```
 
-You'll notice that we didn't give our NDVI layer a name yet, and it automatically copied over the layer name `B8A` as a result. It's good to make sure that the SpatRaster names make sense, so you don't forget which band is which later on. Let's change all the layer names (**make sure you get the order right!**).
+You'll notice that we didn't give our NDVI layer a name yet, and it automatically assigned the layer name 'lyr.1' as a result. It's good to make sure that the SpatRaster names make sense, so you don't forget which band is which later on. Let's change all the layer names (**make sure you get the order right!**).
 
 ```{r}
 names(covs) <- c(names(Gewata), "NDVI")
